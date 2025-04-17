@@ -1,10 +1,5 @@
-# First, let's create the FAQ JSON file structure
 
-import json
-import os
-
-# Define the FAQ data with categories
-faq_data = {
+{
     "buildings": {
         "ST Building": [
             {
