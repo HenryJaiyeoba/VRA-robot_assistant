@@ -13,7 +13,7 @@ class FAQManager():
                 return json.load(file)
         except FileNotFoundError:
             print(f"FAQ database not found at {self.database_path}. ")
-            sys.quit(1)
+            sys.exit()
 
     def save_faq_data(self):
         with open(self.database_path, "w") as file:
