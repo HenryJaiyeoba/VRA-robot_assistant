@@ -1,0 +1,89 @@
+{
+    "buildings": {
+        "ST Building": [
+            {
+                "id": "st1",
+                "question": "What departments are located in the ST Building?",
+                "answer": "The ST Building houses the Science and Technology departments, including Computer Science, Physics, and Engineering labs."
+            },
+            {
+                "id": "st2",
+                "question": "What are the ST Building hours?",
+                "answer": "The ST Building is open from 7:00 AM to 10:00 PM on weekdays, and 9:00 AM to 6:00 PM on weekends."
+            },
+            {
+                "id": "st3",
+                "question": "Where can I find the computer labs in ST Building?",
+                "answer": "Computer labs are located on the 2nd floor of the ST Building, rooms ST201-ST210."
+            }
+        ],
+        "CU Building": [
+            {
+                "id": "cu1",
+                "question": "What facilities are in the CU Building?",
+                "answer": "The CU Building contains the Student Union, cafeteria, bookstore, and student organization offices."
+            },
+            {
+                "id": "cu2",
+                "question": "What are the cafeteria hours in CU Building?",
+                "answer": "The cafeteria is open from 7:30 AM to 7:00 PM on weekdays, and 10:00 AM to 2:00 PM on weekends."
+            },
+            {
+                "id": "cu3",
+                "question": "Where is the student help desk in CU Building?",
+                "answer": "The student help desk is located on the 1st floor of the CU Building, next to the main entrance."
+            }
+        ],
+        "GE Building": [
+            {
+                "id": "ge1",
+                "question": "What classes are held in the GE Building?",
+                "answer": "The GE Building hosts General Education classes including Humanities, Social Sciences, and Arts courses."
+            },
+            {
+                "id": "ge2",
+                "question": "Where is the auditorium in GE Building?",
+                "answer": "The main auditorium is on the ground floor of the GE Building, room GE101."
+            },
+            {
+                "id": "ge3",
+                "question": "Are there study areas in the GE Building?",
+                "answer": "Yes, there are study lounges on each floor of the GE Building, with the largest one on the 3rd floor."
+            }
+        ]
+    },
+    "general": [
+        {
+            "id": "gen1",
+            "question": "What are the campus WiFi login details?",
+            "answer": "Connect to 'Campus-WiFi' network and use your student ID and password to log in."
+        },
+        {
+            "id": "gen2",
+            "question": "Where can I find the nearest restrooms?",
+            "answer": "Restrooms are available on every floor of each building, typically near the elevators or stairwells."
+        },
+        {
+            "id": "gen3",
+            "question": "How do I contact campus security?",
+            "answer": "Campus security can be reached at extension 5555 from any campus phone, or at (555) 123-5555."
+        }
+    ],
+    "services": [
+        {
+            "id": "svc1",
+            "question": "Where is the financial aid office?",
+            "answer": "The financial aid office is located on the 2nd floor of the CU Building, room CU205."
+        },
+        {
+            "id": "svc2",
+            "question": "How do I reserve a study room?",
+            "answer": "Study rooms can be reserved through the online portal at reserve.campus.edu or at the library information desk."
+        },
+        {
+            "id": "svc3",
+            "question": "What dining options are available on campus?",
+            "answer": "The main cafeteria is in the CU Building, with coffee shops in the ST and GE Buildings. Food trucks are usually available near the quad area."
+        }
+    ]
+}
