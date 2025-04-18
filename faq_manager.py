@@ -75,3 +75,74 @@ class FAQManager():
         return results
 
 # TODO: Add question, Delete question, Update question
+    def add_question(self, category, question_text, answer_text):
+        new_question = {
+            "question": question_text,
+            "answer": answer_text
+        }
+        
+        # Generate an ID 
+        if category.startswith("Building: "):
+            building_name = category.replace("Building: ", "")
+            prefix = building_name.lower().replace(" ", "")[0:2]
+            # Ensure buildings category and the specific building exist
+            if 'buildings' not in self.faq_data:
+                self.faq_data['buildings'] = {}
+            if building_name not in self.faq_data['buildings']:
+                self.faq_data['buildings'][building_name] = []
+            count = len(self.faq_data['buildings'][building_name]) + 1
+            new_question['id'] = f"{prefix}{count}"
+            self.faq_data['buildings'][building_name].append(new_question)
+        else:
+            # Ensure cat exists
+            if category not in self.faq_data:
+                self.faq_data[category] = []
+            prefix = category.lower()[0:3]
+            count = len(self.faq_data[category]) + 1
+            new_question['id'] = f"{prefix}{count}"
+            self.faq_data[category].append(new_question)
+        
+        # Save changes
+        self.save_database()
+        return new_question['id']
+    
+    def update_question(self, question_id, new_question=None, new_answer=None):
+        # Find d question
+        for category in self.faq_data:
+            if category == 'buildings':
+                for building in self.faq_data['buildings']:
+                    for i, question in enumerate(self.faq_data['buildings'][building]):
+                        if question['id'] == question_id:
+                            if new_question:
+                                self.faq_data['buildings'][building][i]['question'] = new_question
+                            if new_answer:
+                                self.faq_data['buildings'][building][i]['answer'] = new_answer
+                            self.save_database()
+                            return True
+            else:
+                for i, question in enumerate(self.faq_data[category]):
+                    if question['id'] == question_id:
+                        if new_question:
+                            self.faq_data[category][i]['question'] = new_question
+                        if new_answer:
+                            self.faq_data[category][i]['answer'] = new_answer
+                        self.save_database()
+                        return True
+        return False
+    
+    def delete_question(self, question_id):
+        for category in self.faq_data:
+            if category == 'buildings':
+                for building in self.faq_data['buildings']:
+                    for i, question in enumerate(self.faq_data['buildings'][building]):
+                        if question['id'] == question_id:
+                            del self.faq_data['buildings'][building][i]
+                            self.save_database()
+                            return True
+            else:
+                for i, question in enumerate(self.faq_data[category]):
+                    if question['id'] == question_id:
+                        del self.faq_data[category][i]
+                        self.save_database()
+                        return True
+        return False
