@@ -1,11 +1,11 @@
 import os 
 import json
-import re
 
 class FAQManager():
     def __init__(self, database_path = "/data/faq.json"):
         self.database_path = database_path
         self.faq_data = self.load_faq_data()
+        self.selected_question = None
 
     def load_faq_data(self):
         try:
@@ -54,6 +54,27 @@ class FAQManager():
                     if question['id'] == question_id:
                         return question
         return None
+    
+    def get_all_questions(self):
+        all_questions = []
+        
+        for category in self.faq_data:
+            if category != 'buildings':
+                for q in self.faq_data[category]:
+                    all_questions.append({
+                        'category': category,
+                        'data': q
+                    })
+        
+        if 'buildings' in self.faq_data:
+            for building in self.faq_data['buildings']:
+                for q in self.faq_data['buildings'][building]:
+                    all_questions.append({
+                        'category': f"Building: {building}",
+                        'data': q
+                    })
+        
+        return all_questions
 
     def search(self, query):
         query = query.lower()

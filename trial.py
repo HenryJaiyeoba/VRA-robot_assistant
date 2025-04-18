@@ -5,15 +5,7 @@ import time
 import json
 from pygame.locals import *
 
-import FaqManager
-
-# Try to import RPi.GPIO, but allow for development on non-Raspberry Pi systems
-try:
-    import RPi.GPIO as GPIO
-    GPIO_AVAILABLE = True
-except ImportError:
-    print("Warning: RPi.GPIO module not available. Running in development mode.")
-    GPIO_AVAILABLE = False
+import RPi.GPIO as GPIO
 
 # FAQ Manager class
 class FAQManager:

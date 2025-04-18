@@ -4,6 +4,8 @@ import os
 import time
 from pygame.locals import *
 import RPi.GPIO as GPIO
+from faq_manager import FAQManager
+
 
 pygame.init()
 
@@ -12,7 +14,7 @@ SCREEN_HEIGHT = 480
 
 # Set up the display
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Robot Interface')
+pygame.display.set_caption('VRA Interface')
 
 
 clock = pygame.time.Clock()
@@ -75,23 +77,68 @@ class UI:
     def __init__(self):
         self.fonts = load_fonts()
         
-    def draw_text(self, surface, text, font_size, color, x, y, align="left"):
+    def draw_text(self, surface, text, font_size, color, x, y, align="left", max_width=None):
         font = self.fonts.get(font_size, self.fonts['regular'])
-        text_surface = font.render(text, True, color)
-        text_rect = text_surface.get_rect()
-        
-        # Adjust position based on alignment?
-        if align == "center":
-            text_rect.center = (x, y)
-        elif align == "right":
-            text_rect.right = x
-            text_rect.top = y
-        else:  # left align
-            text_rect.left = x
-            text_rect.top = y
+
+        if max_width:
+            words = text.split(' ')
+            lines = []
+            current_line = []
+
+            for word in words:
+                test_line = ' '.join(current_line + [word])
+                if font_size(test_line)[0] <= max_width:
+                    current_line.append(word)
+                else:
+                    if current_line:
+                        lines.append(' '.join(current_line))
+                    current_line = [word]
+            if current_line:
+                lines.append(' '.join(current_line))
             
-        surface.blit(text_surface, text_rect)
-        return text_rect
+            text_height = font.size("Tg")[1]
+            total_height = len(lines) * (text_height + 2)
+            current_y = y
+
+            rects = []
+            for line in lines:
+                text_surface = font.render(line, True, color)
+                text_rect = text_surface.get_rect()
+
+                if align == "center":
+                    text_rect.centerx = x
+                    text_rect.top = current_y
+                elif align == "right":
+                    text_rect.right = x
+                    text_rect.top = current_y
+                else:  # left alignment
+                    text_rect.left = x
+                    text_rect.top = current_y
+                
+                surface.blit(text_surface, text_rect)
+                rects.append(text_rect)
+                current_y += text_height + 2
+            
+            if rects:
+                bounding_rect = rects[0].unionall(rects[1:]) if len(rects) > 1 else rects[0]
+                return bounding_rect
+            return pygame.Rect(x, y, 0, 0)
+        else:
+            text_surface = font.render(text, True, color)
+            text_rect = text_surface.get_rect()
+
+            if align == "center":
+                text_rect.centerx = x
+                text_rect.centery = y
+            elif align == "right":
+                text_rect.right = x
+                text_rect.centery = y
+            else:
+                text_rect.left = x
+                text_rect.centery = y
+            
+            surface.blit(text_surface, text_rect)
+            return text_rect      
     
     def draw_button(self, surface, text, x, y, width=200, height=50, 
                    color=Colors.PRIMARY, text_color=Colors.WHITE, 
@@ -234,7 +281,7 @@ class UI:
             'ge_button': ge_button
         }
     
-    def draw_info_panel(self, surface):
+    def draw_info_panel(self, surface, faq_manager):
         # info panel bg
         info_panel = self.draw_panel(
             surface,
@@ -245,7 +292,6 @@ class UI:
             border_width=1
         )
         
-        #info panel title
         title_y = Layout.CONTENT_Y + Layout.MARGIN
         self.draw_text(
             surface,
@@ -256,19 +302,102 @@ class UI:
             title_y,
             align="center"
         )
-        
-        #Draw placeholder for FAQ items
+        all_questions = faq_manager.get_all_questions()
         content_y = title_y + 50
-        self.draw_text(
-            surface,
-            "Select a question to see the answer",
-            'small',
-            Colors.GRAY,
-            Layout.INFO_X + Layout.MARGIN,
-            content_y
-        )
+        question_buttons = []
+
+        if faq_manager.selected_question:
+            # Display the selected question
+            question_text = faq_manager.selected_question['data']['question']
+            answer_text = faq_manager.selected_question['data']['answer']
+            
+            # Draw question
+            question_rect = self.draw_panel(
+                surface,
+                Layout.INFO_X + Layout.MARGIN,
+                content_y,
+                Layout.INFO_WIDTH - (Layout.MARGIN * 2),
+                60,
+                bg_color=Colors.PRIMARY_LIGHT,
+                border_radius=5
+            )
+            
+            self.draw_text(
+                surface,
+                question_text,
+                'regular',
+                Colors.WHITE,
+                Layout.INFO_X + Layout.MARGIN + 10,
+                content_y + 15,
+                max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
+            )
+            
+            # Draw back button
+            back_button = self.draw_button(
+                surface,
+                "Back to FAQs",
+                Layout.INFO_X + Layout.MARGIN,
+                content_y + 70,
+                width=150,
+                height=40,
+                color=Colors.SECONDARY
+            )
+            question_buttons.append(('back', back_button))
+            
+            # Draw answer
+            answer_y = content_y + 130
+            answer_panel = self.draw_panel(
+                surface,
+                Layout.INFO_X + Layout.MARGIN,
+                answer_y,
+                Layout.INFO_WIDTH - (Layout.MARGIN * 2),
+                Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - answer_y - Layout.MARGIN,
+                bg_color=Colors.LIGHT_GRAY,
+                border_radius=5
+            )
+            
+            self.draw_text(
+                surface,
+                answer_text,
+                'regular',
+                Colors.BLACK,
+                Layout.INFO_X + Layout.MARGIN + 10,
+                answer_y + 10,
+                max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
+            )
+            
+        else:
+            for i, q in enumerate(all_questions):
+                if i < 6:  # Limit to 6 questions to fit on screen
+                    q_height = 50
+                    q_y = content_y + (i * (q_height + 10))
+                    
+                    # Draw question button
+                    q_button = self.draw_panel(
+                        surface,
+                        Layout.INFO_X + Layout.MARGIN,
+                        q_y,
+                        Layout.INFO_WIDTH - (Layout.MARGIN * 2),
+                        q_height,
+                        bg_color=Colors.PRIMARY_LIGHT,
+                        border_radius=5
+                    )
+                    
+                    # Draw question text
+                    self.draw_text(
+                        surface,
+                        q['data']['question'],
+                        'small',
+                        Colors.WHITE,
+                        Layout.INFO_X + Layout.MARGIN + 10,
+                        q_y + (q_height // 3),
+                        max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
+                    )
+                    
+                    question_buttons.append((q, q_button))
         
-        return info_panel
+        return info_panel, question_buttons
+
     
     def draw_warning(self, surface, message="Warning: Obstacle detected!"):
         # Create glassy transparent overlay
@@ -322,6 +451,16 @@ class RobotInterface:
         self.warning_message = ""
         self.warning_time = 0
         self.warning_duration = 3  # seconds
+        
+        # Initialize FAQ manager
+        self.faq_manager = FAQManager()
+        
+        # UI elements that need click detection
+        self.nav_buttons = {}
+        self.faq_buttons = []
+        
+        # Status message
+        self.status_message = "Ready for navigation"
     
     def handle_events(self):
         """Process pygame events"""
@@ -340,11 +479,35 @@ class RobotInterface:
                     self.display_building_selection("GE Building")
                 elif event.key == K_w:  # Test warning message
                     self.show_warning_message("Obstacle detected! Please move.")
+            
+            # Handle mouse clicks (for touch screen)
+            elif event.type == MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
+                
+                # Check navigation buttons
+                if self.nav_buttons:
+                    if self.nav_buttons.get('st_button') and self.nav_buttons['st_button'].collidepoint(pos):
+                        self.display_building_selection("ST Building")
+                    elif self.nav_buttons.get('cu_button') and self.nav_buttons['cu_button'].collidepoint(pos):
+                        self.display_building_selection("CU Building")
+                    elif self.nav_buttons.get('ge_button') and self.nav_buttons['ge_button'].collidepoint(pos):
+                        self.display_building_selection("GE Building")
+                
+                # Check FAQ buttons
+                for q_data, q_rect in self.faq_buttons:
+                    if q_rect.collidepoint(pos):
+                        if q_data == 'back':
+                            # Go back to FAQ list
+                            self.faq_manager.selected_question = None
+                        else:
+                            # Show selected question and answer
+                            self.faq_manager.selected_question = q_data
+                        break
     
     def display_building_selection(self, building):
         """Display building selection message"""
         print(f"Selected: {building}")
-        status_message = f"Moving to {building}..."
+        self.status_message = f"Moving to {building}..."
         # In a real implementation, you would send a signal to Arduino
         # or handle the movement logic here
         
@@ -362,25 +525,36 @@ class RobotInterface:
     
     def draw(self):
         """Draw the interface"""
+        # Fill background
         screen.fill(Colors.BLACK)
-        self.ui.draw_header(screen, "Campus Navigation Robot")
-        self.ui.draw_navigation_panel(screen)
-        self.ui.draw_info_panel(screen)
-        self.ui.draw_footer(screen, "Ready for navigation")
-       
+        
+        # Draw header
+        self.ui.draw_header(screen, "VRA Mobile Robot:")
+        
+        # Draw navigation panel and store button references
+        self.nav_buttons = self.ui.draw_navigation_panel(screen)
+        
+        # Draw info panel with FAQ data and store FAQ button references
+        _, self.faq_buttons = self.ui.draw_info_panel(screen, self.faq_manager)
+        
+        # Draw footer
+        self.ui.draw_footer(screen, self.status_message)
+        
+        # Draw warning if active
         if self.show_warning:
             self.ui.draw_warning(screen, self.warning_message)
         
+        # Update the display
         pygame.display.flip()
     
-    def run(self):
-        """Main application loop"""
+    def run(self):            
         while self.running:
             self.handle_events()
             self.update()
             self.draw()
             clock.tick(FPS)
         
+        # Clean up
             GPIO.cleanup()
         pygame.quit()
         sys.exit()
