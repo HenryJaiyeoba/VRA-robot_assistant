@@ -2,7 +2,7 @@ import sys
 import json
 
 class FAQManager():
-    def __init__(self, database_path = "/data/faq.json"):
+    def __init__(self, database_path = "/data/faq_db.json"):
         self.database_path = database_path
         self.faq_data = self.load_faq_data()
         self.selected_question = None
