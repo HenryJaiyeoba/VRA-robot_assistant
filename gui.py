@@ -378,16 +378,14 @@ class UI:
             # Calculate how many questions fit
             visible_count = available_height // q_total_height
             
-            # Define scroll button area
             scroll_button_width = 40
             scroll_button_x = Layout.INFO_X + Layout.INFO_WIDTH - Layout.MARGIN - scroll_button_width
             
-            # Draw only visible questions based on scroll_offset
             start_index = scroll_offset
             end_index = min(scroll_offset + visible_count, len(all_questions))
             
-            current_y = content_y + 10 # Start drawing questions below title
-
+            current_y = content_y + 10 
+            # Start drawing questions 
             for i in range(start_index, end_index):
                 q = all_questions[i]
                 q_y = current_y + (i - start_index) * q_total_height
@@ -420,21 +418,29 @@ class UI:
                 scroll_up_y = content_y + 10
                 scroll_down_y = content_y + available_height - q_height
                 
-                # Up Button
+                # Define arrow button rects for click detection
+                scroll_up_rect = pygame.Rect(scroll_button_x, scroll_up_y, scroll_button_width, q_height)
+                scroll_down_rect = pygame.Rect(scroll_button_x, scroll_down_y, scroll_button_width, q_height)
+
+                # Up Arrow Button
                 up_color = Colors.SECONDARY if scroll_offset > 0 else Colors.GRAY
-                scroll_up_button = self.draw_button(
-                    surface, "▲", scroll_button_x, scroll_up_y, 
-                    width=scroll_button_width, height=q_height, 
-                    color=up_color, font_size='large'
-                )
+                up_arrow_points = [
+                    (scroll_up_rect.centerx, scroll_up_rect.top + scroll_up_rect.height * 0.2),  # Top point
+                    (scroll_up_rect.left + scroll_up_rect.width * 0.2, scroll_up_rect.top + scroll_up_rect.height * 0.7), # Bottom-left
+                    (scroll_up_rect.right - scroll_up_rect.width * 0.2, scroll_up_rect.top + scroll_up_rect.height * 0.7) # Bottom-right
+                ]
+                pygame.draw.polygon(surface, up_color, up_arrow_points)
+                scroll_up_button = scroll_up_rect # Use the rect for click detection
                 
-                # Down Button
+                # Down Arrow Button
                 down_color = Colors.SECONDARY if end_index < len(all_questions) else Colors.GRAY
-                scroll_down_button = self.draw_button(
-                    surface, "▼", scroll_button_x, scroll_down_y, 
-                    width=scroll_button_width, height=q_height, 
-                    color=down_color, font_size='large'
-                )
+                down_arrow_points = [
+                    (scroll_down_rect.centerx, scroll_down_rect.top + scroll_down_rect.height * 0.8), # Bottom point
+                    (scroll_down_rect.left + scroll_down_rect.width * 0.2, scroll_down_rect.top + scroll_down_rect.height * 0.3), # Top-left
+                    (scroll_down_rect.right - scroll_down_rect.width * 0.2, scroll_down_rect.top + scroll_down_rect.height * 0.3) # Top-right
+                ]
+                pygame.draw.polygon(surface, down_color, down_arrow_points)
+                scroll_down_button = scroll_down_rect # Use the rect for click detection
 
         return info_panel, question_buttons, scroll_up_button, scroll_down_button
     
