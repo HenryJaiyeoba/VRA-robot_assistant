@@ -578,13 +578,21 @@ class RobotInterface:
                 pos = pygame.mouse.get_pos()
                 
                 # Check navigation buttons ONLY if not currently navigating
-                if not self.navigating_to and self.nav_buttons:
-                    if self.nav_buttons.get('st_button') and self.nav_buttons['st_button'].collidepoint(pos):
-                        self.display_building_selection("ST Building")
-                    elif self.nav_buttons.get('cu_button') and self.nav_buttons['cu_button'].collidepoint(pos):
-                        self.display_building_selection("CU Building")
-                    elif self.nav_buttons.get('ge_button') and self.nav_buttons['ge_button'].collidepoint(pos):
-                        self.display_building_selection("GE Building")
+                if self.nav_buttons: # Check if the dictionary is not empty
+                    if self.navigating_to:
+                        # --- Check for cancel button click ---
+                        if self.nav_buttons.get('cancel_button') and self.nav_buttons['cancel_button'].collidepoint(pos):
+                            self.cancel_navigation() # Call cancel method
+                        # --- End cancel button check ---
+                    else:
+                        # Check building selection buttons when not navigating
+                        if self.nav_buttons.get('st_button') and self.nav_buttons['st_button'].collidepoint(pos):
+                            self.display_building_selection("ST Building")
+                        elif self.nav_buttons.get('cu_button') and self.nav_buttons['cu_button'].collidepoint(pos):
+                            self.display_building_selection("CU Building")
+                        elif self.nav_buttons.get('ge_button') and self.nav_buttons['ge_button'].collidepoint(pos):
+                            self.display_building_selection("GE Building")
+                
                 
                 # Check FAQ buttons (these are always in the right panel)
                 if not self.faq_manager.selected_question:
@@ -620,8 +628,7 @@ class RobotInterface:
     def display_building_selection(self, building):
         print(f"Selected: {building}")
         self.navigating_to = building # Set the target
-        self.status_message = f"Navigating to {building}..."
-        self.nav_buttons = {} 
+        self.status_message = f"Navigating to {building}..." 
 
         self.faq_manager.selected_question = None 
         self.faq_scroll_offset = 0
