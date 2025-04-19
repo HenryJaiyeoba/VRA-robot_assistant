@@ -263,7 +263,7 @@ class UI:
                 st_y,
                 width=button_width,
                 height=button_height,
-                color=Colors.ST_BUILDING
+                color=Colors.ST_BUILDING,
                 font_size="small"
             )
             
@@ -276,7 +276,7 @@ class UI:
                 cu_y,
                 width=button_width,
                 height=button_height,
-                color=Colors.CU_BUILDING
+                color=Colors.CU_BUILDING,
                 font_size="small"
             )
             
@@ -289,7 +289,7 @@ class UI:
                 ge_y,
                 width=button_width,
                 height=button_height,
-                color=Colors.GE_BUILDING
+                color=Colors.GE_BUILDING,
                 font_size="small"
             )
             
