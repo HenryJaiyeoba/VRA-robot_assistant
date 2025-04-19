@@ -530,6 +530,7 @@ class RobotInterface:
         
         # Status message
         self.status_message = "Ready for navigation"
+        self.navigating_to = None # Track current navigation target
     
     def handle_events(self):
         """Process pygame events"""
@@ -537,24 +538,25 @@ class RobotInterface:
             if event.type == QUIT:
                 self.running = False
             elif event.type == KEYDOWN:
-                # Handle key presses for testing
                 if event.key == K_ESCAPE:
                     self.running = False
-                elif event.key == K_UP:
+                elif event.key == K_UP and not self.navigating_to: # Only allow selection if not navigating
                     self.display_building_selection("ST Building")
-                elif event.key == K_RIGHT:
+                elif event.key == K_RIGHT and not self.navigating_to:
                     self.display_building_selection("CU Building")
-                elif event.key == K_LEFT:
+                elif event.key == K_LEFT and not self.navigating_to:
                     self.display_building_selection("GE Building")
-                elif event.key == K_w:  # Test warning message
+                elif event.key == K_w:
                     self.show_warning_message("Obstacle detected! Please move.")
+                elif event.key == K_f: # Press 'f' to go back to building selection
+                    self.navigating_to = None
+                    self.status_message = "Ready for navigation"
             
-            # Handle mouse clicks (for touch screen)
             elif event.type == MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 
-                # Check navigation buttons
-                if self.nav_buttons:
+                # Check navigation buttons ONLY if not currently navigating
+                if not self.navigating_to and self.nav_buttons:
                     if self.nav_buttons.get('st_button') and self.nav_buttons['st_button'].collidepoint(pos):
                         self.display_building_selection("ST Building")
                     elif self.nav_buttons.get('cu_button') and self.nav_buttons['cu_button'].collidepoint(pos):
@@ -562,7 +564,7 @@ class RobotInterface:
                     elif self.nav_buttons.get('ge_button') and self.nav_buttons['ge_button'].collidepoint(pos):
                         self.display_building_selection("GE Building")
                 
-                # Check FAQ buttons
+                # Check FAQ buttons (these are always in the right panel)
                 if not self.faq_manager.selected_question:
                     # Check scroll buttons first
                     scrolled = False
@@ -571,15 +573,8 @@ class RobotInterface:
                             self.faq_scroll_offset -= 1
                             scrolled = True
                     elif self.faq_scroll_down_button and self.faq_scroll_down_button.collidepoint(pos):
-                        # Need to know total questions and visible count to check bounds
                         total_questions = len(self.faq_manager.get_all_questions())
-                        # Recalculate visible count based on current layout (could be stored)
-                        title_y = Layout.CONTENT_Y + Layout.MARGIN
-                        content_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (title_y - Layout.CONTENT_Y) - Layout.MARGIN * 2
-                        available_height = content_height - 20
-                        q_total_height = 50 + 10 # height + spacing
-                        self.faq_visible_count = max(1, available_height // q_total_height) # Ensure at least 1
-
+                        # Use stored/recalculated visible count
                         if self.faq_scroll_offset < total_questions - self.faq_visible_count:
                             self.faq_scroll_offset += 1
                             scrolled = True
@@ -589,20 +584,27 @@ class RobotInterface:
                         for q_data, q_rect in self.faq_buttons:
                             if q_rect.collidepoint(pos):
                                 self.faq_manager.selected_question = q_data
-                                break # Found clicked question
+                                self.status_message = "Viewing FAQ" # Update status
+                                break 
                 else:
                     # Check only the 'back' button when a question is selected
                      for q_data, q_rect in self.faq_buttons:
                         if q_rect.collidepoint(pos):
                             if q_data == 'back':
                                 self.faq_manager.selected_question = None
+                                self.status_message = "Ready for navigation" # Update status
+
     
     def display_building_selection(self, building):
-        """Display building selection message"""
+        """Set navigation state and update status"""
         print(f"Selected: {building}")
-        self.status_message = f"Moving to {building}..."
-        # In a real implementation, you would send a signal to Arduino
-        # or handle the movement logic here
+        self.navigating_to = building # Set the target
+        self.status_message = f"Navigating to {building}..."
+        self.nav_buttons = {} # Clear nav buttons as they won't be drawn
+        # Reset FAQ state if needed
+        self.faq_manager.selected_question = None 
+        self.faq_scroll_offset = 0
+        # Add actual navigation logic/signal here
         
     def show_warning_message(self, message):
         """Show a warning message for a specified duration"""
@@ -634,7 +636,7 @@ class RobotInterface:
         self.ui.draw_header(screen, "VRA Mobile Robot:")
         
         # Draw navigation panel and store button references
-        self.nav_buttons = self.ui.draw_navigation_panel(screen)
+        self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
         
         # Draw info panel with FAQ data and store FAQ button references
         _, self.faq_buttons, self.faq_scroll_up_button, self.faq_scroll_down_button = self.ui.draw_info_panel(
