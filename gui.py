@@ -87,7 +87,7 @@ class UI:
 
             for word in words:
                 test_line = ' '.join(current_line + [word])
-                if font_size(test_line)[0] <= max_width:
+                if font.size(test_line)[0] <= max_width:
                     current_line.append(word)
                 else:
                     if current_line:
@@ -565,9 +565,7 @@ if __name__ == "__main__":
         app = RobotInterface()
         app.run()
     except KeyboardInterrupt:
-        # Handle Ctrl+C gracefully
-        if GPIO_AVAILABLE:
-            GPIO.cleanup()
+        GPIO.cleanup()
         pygame.quit()
         print("\nApplication terminated by user.")
         sys.exit(0)
