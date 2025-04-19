@@ -281,7 +281,7 @@ class UI:
             'ge_button': ge_button
         }
     
-     def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
+    def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
         # info panel bg
         info_panel = self.draw_panel(
             surface,
@@ -344,7 +344,7 @@ class UI:
                 height=40,
                 color=Colors.SECONDARY
             )
-             question_buttons.append(('back', back_button))
+            question_buttons.append(('back', back_button))
             
             # Draw answer
             answer_y = content_y + 130 # Position below back button
