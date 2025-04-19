@@ -221,21 +221,40 @@ class UI:
             border_width=1
         )
 
+        buttons = {'panel': nav_panel} # Initialize buttons dict
+
         if navigating_to:
             # Display navigation status message
             message = f"Navigating to {navigating_to}..."
-            self.draw_text(
+            text_rect = self.draw_text(
                 surface,
                 message,
                 'regular', # Use regular font size
                 Colors.PRIMARY_DARK,
                 Layout.NAV_WIDTH // 2,
-                Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 2, # Center vertically
+                Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 3, # Position message higher
                 align="center",
                 max_width=Layout.NAV_WIDTH - Layout.MARGIN * 2 # Allow wrapping
             )
-            # Return the panel rect and an empty dict for buttons
-            return {'panel': nav_panel} 
+
+            # Add Cancel Button below the message
+            cancel_button_width = 150
+            cancel_button_height = 50
+            cancel_button_x = (Layout.NAV_WIDTH - cancel_button_width) // 2
+            # Position below the text, add some padding
+            cancel_button_y = text_rect.bottom + 40 
+
+            cancel_button = self.draw_button(
+                surface,
+                "Cancel",
+                cancel_button_x,
+                cancel_button_y,
+                width=cancel_button_width,
+                height=cancel_button_height,
+                color=Colors.ERROR, # Use error/red color for cancel
+                font_size='regular'
+            )
+            buttons['cancel_button'] = cancel_button 
         else:
             # Display building selection options
             title_y = Layout.CONTENT_Y + Layout.MARGIN
@@ -518,7 +537,7 @@ class RobotInterface:
         self.show_warning = False
         self.warning_message = ""
         self.warning_time = 0
-        self.warning_duration = 3  # seconds
+        self.warning_duration = 3  
         
         # Initialize FAQ manager
         self.faq_manager = FAQManager()
@@ -606,6 +625,11 @@ class RobotInterface:
 
         self.faq_manager.selected_question = None 
         self.faq_scroll_offset = 0
+    
+    def cancel_navigation(self):
+        print("Navigation cancelled.")
+        self.navigating_to = None
+        self.status_message = "Navigation cancelled. Ready."
 
         
     def show_warning_message(self, message):
