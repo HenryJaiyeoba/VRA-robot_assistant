@@ -226,7 +226,7 @@ class UI:
         self.draw_text(
             surface,
             "Where would you like to go?",
-            'regular',
+            'small',
             Colors.BLACK,
             Layout.NAV_WIDTH // 2,
             title_y,
