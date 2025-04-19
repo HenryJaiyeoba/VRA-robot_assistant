@@ -313,13 +313,11 @@ class UI:
             )
             
             # Return panel and button rects
-            return {
-                'panel': nav_panel,
-                'st_button': st_button,
-                'cu_button': cu_button,
-                'ge_button': ge_button
-            }
-
+            buttons['st_button'] = st_button
+            buttons['cu_button'] = cu_button
+            buttons['ge_button'] = ge_button
+            
+            return buttons
     
     def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
         # info panel bg
