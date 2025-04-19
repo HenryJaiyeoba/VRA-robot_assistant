@@ -66,7 +66,7 @@ class Layout:
 
 def load_fonts():
     fonts = {
-        'small': pygame.font.Font(None, 20),
+        'small': pygame.font.Font(None, 24),
         'regular': pygame.font.Font(None, 32),
         'large': pygame.font.Font(None, 48),
         'title': pygame.font.Font(None, 64)
