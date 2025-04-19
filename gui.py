@@ -211,7 +211,7 @@ class UI:
         
         return footer_rect
     
-    def draw_navigation_panel(self, surface):
+    def draw_navigation_panel(self, surface, navigating_to=None):
         nav_panel = self.draw_panel(
             surface,
             0, Layout.CONTENT_Y,
@@ -220,66 +220,84 @@ class UI:
             border_color=Colors.GRAY,
             border_width=1
         )
-        
-        # Draw navigation title
-        title_y = Layout.CONTENT_Y + Layout.MARGIN
-        self.draw_text(
-            surface,
-            "Where would you like to go?",
-            'small',
-            Colors.BLACK,
-            Layout.NAV_WIDTH // 2,
-            title_y,
-            align="center"
-        )
-        
-        #building buttons
-        button_width = Layout.NAV_WIDTH - (Layout.MARGIN * 2)
-        button_height = 60
-        button_spacing = 20
-        
-        # ST Building Button (UP)
-        st_y = title_y + 50
-        st_button = self.draw_button(
-            surface,
-            "Press UP for ST Building",
-            Layout.MARGIN,
-            st_y,
-            width=button_width,
-            height=button_height,
-            color=Colors.ST_BUILDING
-        )
-        
-        # CU Building Button (RIGHT)
-        cu_y = st_y + button_height + button_spacing
-        cu_button = self.draw_button(
-            surface,
-            "Press RIGHT for CU Building",
-            Layout.MARGIN,
-            cu_y,
-            width=button_width,
-            height=button_height,
-            color=Colors.CU_BUILDING
-        )
-        
-        # GE Building Button (LEFT)
-        ge_y = cu_y + button_height + button_spacing
-        ge_button = self.draw_button(
-            surface,
-            "Press LEFT for GE Building",
-            Layout.MARGIN,
-            ge_y,
-            width=button_width,
-            height=button_height,
-            color=Colors.GE_BUILDING
-        )
-        
-        return {
-            'panel': nav_panel,
-            'st_button': st_button,
-            'cu_button': cu_button,
-            'ge_button': ge_button
-        }
+
+        if navigating_to:
+            # Display navigation status message
+            message = f"Navigating to {navigating_to}..."
+            self.draw_text(
+                surface,
+                message,
+                'regular', # Use regular font size
+                Colors.PRIMARY_DARK,
+                Layout.NAV_WIDTH // 2,
+                Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 2, # Center vertically
+                align="center",
+                max_width=Layout.NAV_WIDTH - Layout.MARGIN * 2 # Allow wrapping
+            )
+            # Return the panel rect and an empty dict for buttons
+            return {'panel': nav_panel} 
+        else:
+            # Display building selection options
+            title_y = Layout.CONTENT_Y + Layout.MARGIN
+            self.draw_text(
+                surface,
+                "Where would you like to go?",
+                'small',
+                Colors.BLACK,
+                Layout.NAV_WIDTH // 2,
+                title_y,
+                align="center"
+            )
+            
+            #building buttons
+            button_width = Layout.NAV_WIDTH - (Layout.MARGIN * 2)
+            button_height = 60
+            button_spacing = 20
+            
+            # ST Building Button (UP)
+            st_y = title_y + 50
+            st_button = self.draw_button(
+                surface,
+                "Press UP for ST Building",
+                Layout.MARGIN,
+                st_y,
+                width=button_width,
+                height=button_height,
+                color=Colors.ST_BUILDING
+            )
+            
+            # CU Building Button (RIGHT)
+            cu_y = st_y + button_height + button_spacing
+            cu_button = self.draw_button(
+                surface,
+                "Press RIGHT for CU Building",
+                Layout.MARGIN,
+                cu_y,
+                width=button_width,
+                height=button_height,
+                color=Colors.CU_BUILDING
+            )
+            
+            # GE Building Button (LEFT)
+            ge_y = cu_y + button_height + button_spacing
+            ge_button = self.draw_button(
+                surface,
+                "Press LEFT for GE Building",
+                Layout.MARGIN,
+                ge_y,
+                width=button_width,
+                height=button_height,
+                color=Colors.GE_BUILDING
+            )
+            
+            # Return panel and button rects
+            return {
+                'panel': nav_panel,
+                'st_button': st_button,
+                'cu_button': cu_button,
+                'ge_button': ge_button
+            }
+
     
     def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
         # info panel bg
