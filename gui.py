@@ -577,15 +577,13 @@ class RobotInterface:
             elif event.type == MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 
-                # Check navigation buttons ONLY if not currently navigating
-                if self.nav_buttons: # Check if the dictionary is not empty
+            
+                if self.nav_buttons: 
                     if self.navigating_to:
-                        # --- Check for cancel button click ---
                         if self.nav_buttons.get('cancel_button') and self.nav_buttons['cancel_button'].collidepoint(pos):
-                            self.cancel_navigation() # Call cancel method
-                        # --- End cancel button check ---
+                            self.cancel_navigation()
+                            self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
                     else:
-                        # Check building selection buttons when not navigating
                         if self.nav_buttons.get('st_button') and self.nav_buttons['st_button'].collidepoint(pos):
                             self.display_building_selection("ST Building")
                         elif self.nav_buttons.get('cu_button') and self.nav_buttons['cu_button'].collidepoint(pos):
