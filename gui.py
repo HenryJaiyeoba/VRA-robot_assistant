@@ -665,13 +665,3 @@ class RobotInterface:
         pygame.quit()
         sys.exit()
 
-# Run the application if this is the main script
-if __name__ == "__main__":
-    try:
-        app = RobotInterface()
-        app.run()
-    except KeyboardInterrupt:
-        GPIO.cleanup()
-        pygame.quit()
-        print("\nApplication terminated by user.")
-        sys.exit(0)
