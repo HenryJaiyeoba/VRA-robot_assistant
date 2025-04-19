@@ -3,7 +3,7 @@ import sys
 import RPi.GPIO as GPIO
 import os 
 from faq_manager import FAQManager
-from gui import GUI
+# from gui import GUI
 from gui import RobotInterface
 
 

@@ -66,7 +66,7 @@ class Layout:
 
 def load_fonts():
     fonts = {
-        'small': pygame.font.Font(None, 24),
+        'small': pygame.font.Font(None, 20),
         'regular': pygame.font.Font(None, 32),
         'large': pygame.font.Font(None, 48),
         'title': pygame.font.Font(None, 64)
@@ -242,7 +242,7 @@ class UI:
             self.draw_text(
                 surface,
                 "Where would you like to go?",
-                'small',
+                'regular',
                 Colors.BLACK,
                 Layout.NAV_WIDTH // 2,
                 title_y,
@@ -264,6 +264,7 @@ class UI:
                 width=button_width,
                 height=button_height,
                 color=Colors.ST_BUILDING
+                font_size="small"
             )
             
             # CU Building Button (RIGHT)
@@ -276,6 +277,7 @@ class UI:
                 width=button_width,
                 height=button_height,
                 color=Colors.CU_BUILDING
+                font_size="small"
             )
             
             # GE Building Button (LEFT)
@@ -288,6 +290,7 @@ class UI:
                 width=button_width,
                 height=button_height,
                 color=Colors.GE_BUILDING
+                font_size="small"
             )
             
             # Return panel and button rects
@@ -596,24 +599,21 @@ class RobotInterface:
 
     
     def display_building_selection(self, building):
-        """Set navigation state and update status"""
         print(f"Selected: {building}")
         self.navigating_to = building # Set the target
         self.status_message = f"Navigating to {building}..."
-        self.nav_buttons = {} # Clear nav buttons as they won't be drawn
-        # Reset FAQ state if needed
+        self.nav_buttons = {} 
+
         self.faq_manager.selected_question = None 
         self.faq_scroll_offset = 0
-        # Add actual navigation logic/signal here
+
         
     def show_warning_message(self, message):
-        """Show a warning message for a specified duration"""
         self.show_warning = True
         self.warning_message = message
         self.warning_time = time.time()
     
     def update(self):
-        """Update game state"""
         # Check if warning should be dismissed
         if self.show_warning and time.time() - self.warning_time > self.warning_duration:
             self.show_warning = False
@@ -627,15 +627,12 @@ class RobotInterface:
         
         max_offset = max(0, total_questions - self.faq_visible_count)
         self.faq_scroll_offset = max(0, min(self.faq_scroll_offset, max_offset))
+
     def draw(self):
-        """Draw the interface"""
-        # Fill background
         screen.fill(Colors.BLACK)
         
         # Draw header
         self.ui.draw_header(screen, "VRA Mobile Robot:")
-        
-        # Draw navigation panel and store button references
         self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
         
         # Draw info panel with FAQ data and store FAQ button references
