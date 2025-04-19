@@ -86,7 +86,7 @@ class UI:
             current_line = []
 
             for word in words:
-                test_line = ' '.join(current_line + [word])
+                test_line = ' '.join([*current_line, word])
                 if font.size(test_line)[0] <= max_width:
                     current_line.append(word)
                 else:
@@ -111,7 +111,7 @@ class UI:
                 elif align == "right":
                     text_rect.right = x
                     text_rect.top = current_y
-                else:  # left alignment
+                else:  # left
                     text_rect.left = x
                     text_rect.top = current_y
                 
@@ -167,7 +167,7 @@ class UI:
             
         return panel_rect
     
-    def draw_header(self, surface, title="Robot Interface"):
+    def draw_header(self, surface, title="VRA Interface"):
         # header background
         header_rect = self.draw_panel(
             surface, 
@@ -281,7 +281,7 @@ class UI:
             'ge_button': ge_button
         }
     
-    def draw_info_panel(self, surface, faq_manager):
+     def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
         # info panel bg
         info_panel = self.draw_panel(
             surface,
@@ -302,33 +302,35 @@ class UI:
             title_y,
             align="center"
         )
-        all_questions = faq_manager.get_all_questions()
-        content_y = title_y + 50
+        
+        content_y = title_y + 40 # Adjusted for title
+        content_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (title_y - Layout.CONTENT_Y) - Layout.MARGIN * 2
+        available_height = content_height - 20 # Padding top/bottom within content area
+        
         question_buttons = []
+        scroll_up_button = None
+        scroll_down_button = None
 
         if faq_manager.selected_question:
-            # Display the selected question
-            question_text = faq_manager.selected_question['data']['question']
-            answer_text = faq_manager.selected_question['data']['answer']
-            
+            # ... existing code for displaying selected question ...
             # Draw question
             question_rect = self.draw_panel(
                 surface,
                 Layout.INFO_X + Layout.MARGIN,
                 content_y,
                 Layout.INFO_WIDTH - (Layout.MARGIN * 2),
-                60,
+                60, # Fixed height for selected question display
                 bg_color=Colors.PRIMARY_LIGHT,
                 border_radius=5
             )
             
             self.draw_text(
                 surface,
-                question_text,
+                faq_manager.selected_question['data']['question'],
                 'regular',
                 Colors.WHITE,
                 Layout.INFO_X + Layout.MARGIN + 10,
-                content_y + 15,
+                content_y + 15, # Adjusted y for text inside panel
                 max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
             )
             
@@ -337,28 +339,29 @@ class UI:
                 surface,
                 "Back to FAQs",
                 Layout.INFO_X + Layout.MARGIN,
-                content_y + 70,
+                content_y + 70, # Position below question panel
                 width=150,
                 height=40,
                 color=Colors.SECONDARY
             )
-            question_buttons.append(('back', back_button))
+             question_buttons.append(('back', back_button))
             
             # Draw answer
-            answer_y = content_y + 130
+            answer_y = content_y + 130 # Position below back button
+            answer_panel_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (answer_y - Layout.CONTENT_Y) - Layout.MARGIN
             answer_panel = self.draw_panel(
                 surface,
                 Layout.INFO_X + Layout.MARGIN,
                 answer_y,
                 Layout.INFO_WIDTH - (Layout.MARGIN * 2),
-                Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - answer_y - Layout.MARGIN,
+                answer_panel_height,
                 bg_color=Colors.LIGHT_GRAY,
                 border_radius=5
             )
             
             self.draw_text(
                 surface,
-                answer_text,
+                faq_manager.selected_question['data']['answer'],
                 'regular',
                 Colors.BLACK,
                 Layout.INFO_X + Layout.MARGIN + 10,
@@ -367,37 +370,73 @@ class UI:
             )
             
         else:
-            for i, q in enumerate(all_questions):
-                if i < 6:  # Limit to 6 questions to fit on screen
-                    q_height = 50
-                    q_y = content_y + (i * (q_height + 10))
-                    
-                    # Draw question button
-                    q_button = self.draw_panel(
-                        surface,
-                        Layout.INFO_X + Layout.MARGIN,
-                        q_y,
-                        Layout.INFO_WIDTH - (Layout.MARGIN * 2),
-                        q_height,
-                        bg_color=Colors.PRIMARY_LIGHT,
-                        border_radius=5
-                    )
-                    
-                    # Draw question text
-                    self.draw_text(
-                        surface,
-                        q['data']['question'],
-                        'small',
-                        Colors.WHITE,
-                        Layout.INFO_X + Layout.MARGIN + 10,
-                        q_y + (q_height // 3),
-                        max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
-                    )
-                    
-                    question_buttons.append((q, q_button))
-        
-        return info_panel, question_buttons
+            all_questions = faq_manager.get_all_questions()
+            q_height = 50
+            q_spacing = 10
+            q_total_height = q_height + q_spacing
+            
+            # Calculate how many questions fit
+            visible_count = available_height // q_total_height
+            
+            # Define scroll button area
+            scroll_button_width = 40
+            scroll_button_x = Layout.INFO_X + Layout.INFO_WIDTH - Layout.MARGIN - scroll_button_width
+            
+            # Draw only visible questions based on scroll_offset
+            start_index = scroll_offset
+            end_index = min(scroll_offset + visible_count, len(all_questions))
+            
+            current_y = content_y + 10 # Start drawing questions below title
 
+            for i in range(start_index, end_index):
+                q = all_questions[i]
+                q_y = current_y + (i - start_index) * q_total_height
+                
+                # Draw question button panel
+                q_button = self.draw_panel(
+                    surface,
+                    Layout.INFO_X + Layout.MARGIN,
+                    q_y,
+                    Layout.INFO_WIDTH - (Layout.MARGIN * 2) - (scroll_button_width + 5 if len(all_questions) > visible_count else 0), # Make space for scroll buttons
+                    q_height,
+                    bg_color=Colors.PRIMARY_LIGHT,
+                    border_radius=5
+                )
+                # question text
+                self.draw_text(
+                    surface,
+                    q['data']['question'],
+                    'small',
+                    Colors.WHITE,
+                    Layout.INFO_X + Layout.MARGIN + 10,
+                    q_y + (q_height // 2) - 8, # Center text vertically approx
+                    max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 3) - scroll_button_width - 10 # Adjust max width
+                )
+                
+                question_buttons.append((q, q_button))
+
+            # Draw scroll buttons if needed
+            if len(all_questions) > visible_count:
+                scroll_up_y = content_y + 10
+                scroll_down_y = content_y + available_height - q_height
+                
+                # Up Button
+                up_color = Colors.SECONDARY if scroll_offset > 0 else Colors.GRAY
+                scroll_up_button = self.draw_button(
+                    surface, "▲", scroll_button_x, scroll_up_y, 
+                    width=scroll_button_width, height=q_height, 
+                    color=up_color, font_size='large'
+                )
+                
+                # Down Button
+                down_color = Colors.SECONDARY if end_index < len(all_questions) else Colors.GRAY
+                scroll_down_button = self.draw_button(
+                    surface, "▼", scroll_button_x, scroll_down_y, 
+                    width=scroll_button_width, height=q_height, 
+                    color=down_color, font_size='large'
+                )
+
+        return info_panel, question_buttons, scroll_up_button, scroll_down_button
     
     def draw_warning(self, surface, message="Warning: Obstacle detected!"):
         # Create glassy transparent overlay
@@ -436,10 +475,12 @@ class UI:
             message,
             'large',
             Colors.WHITE,
-            warning_x + 100,
+            warning_x + icon_radius * 2 + 60, # Increased space after icon
             warning_y + (warning_height // 2),
-            align="left"
+            align="left",
+            max_width=warning_width - (icon_radius * 2 + 70) # Max width considering icon and padding
         )
+        
         
         return warning_panel
 
@@ -454,10 +495,14 @@ class RobotInterface:
         
         # Initialize FAQ manager
         self.faq_manager = FAQManager()
+        self.faq_scroll_offset = 0
+        self.faq_visible_count = 6 # Initial estimate, will be recalculated in draw
         
         # UI elements that need click detection
         self.nav_buttons = {}
         self.faq_buttons = []
+        self.faq_scroll_up_button = None
+        self.faq_scroll_down_button = None
         
         # Status message
         self.status_message = "Ready for navigation"
@@ -494,15 +539,39 @@ class RobotInterface:
                         self.display_building_selection("GE Building")
                 
                 # Check FAQ buttons
-                for q_data, q_rect in self.faq_buttons:
-                    if q_rect.collidepoint(pos):
-                        if q_data == 'back':
-                            # Go back to FAQ list
-                            self.faq_manager.selected_question = None
-                        else:
-                            # Show selected question and answer
-                            self.faq_manager.selected_question = q_data
-                        break
+                if not self.faq_manager.selected_question:
+                    # Check scroll buttons first
+                    scrolled = False
+                    if self.faq_scroll_up_button and self.faq_scroll_up_button.collidepoint(pos):
+                        if self.faq_scroll_offset > 0:
+                            self.faq_scroll_offset -= 1
+                            scrolled = True
+                    elif self.faq_scroll_down_button and self.faq_scroll_down_button.collidepoint(pos):
+                        # Need to know total questions and visible count to check bounds
+                        total_questions = len(self.faq_manager.get_all_questions())
+                        # Recalculate visible count based on current layout (could be stored)
+                        title_y = Layout.CONTENT_Y + Layout.MARGIN
+                        content_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (title_y - Layout.CONTENT_Y) - Layout.MARGIN * 2
+                        available_height = content_height - 20
+                        q_total_height = 50 + 10 # height + spacing
+                        self.faq_visible_count = max(1, available_height // q_total_height) # Ensure at least 1
+
+                        if self.faq_scroll_offset < total_questions - self.faq_visible_count:
+                            self.faq_scroll_offset += 1
+                            scrolled = True
+                    
+                    # If not scrolled, check question buttons
+                    if not scrolled:
+                        for q_data, q_rect in self.faq_buttons:
+                            if q_rect.collidepoint(pos):
+                                self.faq_manager.selected_question = q_data
+                                break # Found clicked question
+                else:
+                    # Check only the 'back' button when a question is selected
+                     for q_data, q_rect in self.faq_buttons:
+                        if q_rect.collidepoint(pos):
+                            if q_data == 'back':
+                                self.faq_manager.selected_question = None
     
     def display_building_selection(self, building):
         """Display building selection message"""
@@ -522,7 +591,16 @@ class RobotInterface:
         # Check if warning should be dismissed
         if self.show_warning and time.time() - self.warning_time > self.warning_duration:
             self.show_warning = False
-    
+
+        total_questions = len(self.faq_manager.get_all_questions())
+        title_y = Layout.CONTENT_Y + Layout.MARGIN
+        content_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (title_y - Layout.CONTENT_Y) - Layout.MARGIN * 2
+        available_height = content_height - 20
+        q_total_height = 50 + 10 # height + spacing
+        self.faq_visible_count = max(1, available_height // q_total_height)
+        
+        max_offset = max(0, total_questions - self.faq_visible_count)
+        self.faq_scroll_offset = max(0, min(self.faq_scroll_offset, max_offset))
     def draw(self):
         """Draw the interface"""
         # Fill background
@@ -535,7 +613,9 @@ class RobotInterface:
         self.nav_buttons = self.ui.draw_navigation_panel(screen)
         
         # Draw info panel with FAQ data and store FAQ button references
-        _, self.faq_buttons = self.ui.draw_info_panel(screen, self.faq_manager)
+        _, self.faq_buttons, self.faq_scroll_up_button, self.faq_scroll_down_button = self.ui.draw_info_panel(
+            screen, self.faq_manager, self.faq_scroll_offset
+        )
         
         # Draw footer
         self.ui.draw_footer(screen, self.status_message)
