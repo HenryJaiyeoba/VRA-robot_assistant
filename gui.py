@@ -251,7 +251,7 @@ class UI:
                 cancel_button_y,
                 width=cancel_button_width,
                 height=cancel_button_height,
-                color=Colors.ERROR, # Use error/red color for cancel
+                color=Colors.ERROR, 
                 font_size='regular'
             )
             buttons['cancel_button'] = cancel_button 
@@ -317,7 +317,7 @@ class UI:
             buttons['cu_button'] = cu_button
             buttons['ge_button'] = ge_button
             
-            return buttons
+        return buttons
     
     def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
         # info panel bg
