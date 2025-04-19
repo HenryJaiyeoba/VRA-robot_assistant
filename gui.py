@@ -581,8 +581,9 @@ class RobotInterface:
                 if self.nav_buttons: 
                     if self.navigating_to:
                         if self.nav_buttons.get('cancel_button') and self.nav_buttons['cancel_button'].collidepoint(pos):
+                            print("this button was clicked")
                             self.cancel_navigation()
-                            self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
+                             
                     else:
                         if self.nav_buttons.get('st_button') and self.nav_buttons['st_button'].collidepoint(pos):
                             self.display_building_selection("ST Building")
