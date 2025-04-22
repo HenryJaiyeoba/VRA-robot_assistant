@@ -3,8 +3,8 @@ import time
 import json
 from huskylib import HuskyLensLibrary
 
-hl = HuskyLensLibrary("SERIAL", "/dev/ttyUSB1", 3000000)
-# hl = HuskyLensLibrary("I2C","", address=0x32)
+# hl = HuskyLensLibrary("SERIAL", "/dev/ttyUSB1", 3000000)
+hl = HuskyLensLibrary("I2C","", address=0x32)
 
 algorthimsByteID = {
     "ALGORITHM_OBJECT_TRACKING": "0100",
