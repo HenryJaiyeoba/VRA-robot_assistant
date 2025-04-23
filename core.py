@@ -15,10 +15,10 @@ def main():
         
         # Sample messages to display
         messages = [
-            {"text": "System status: Normal", "font_size": "regular", "color": Colors.INFO},
-            {"text": "Battery level: 75%", "font_size": "large", "color": Colors.SUCCESS},
-            {"text": "Warning: Connection unstable", "font_size": "large", "color": Colors.WARNING},
-            {"text": "Error: Sensor malfunction", "font_size": "large", "color": Colors.ERROR},
+            {"text": "Please get out of the way!!", "font_size": "large", "color": Colors.ERROR},
+            {"text": "Avoiding Obstacle...", "font_size": "medium", "color": Colors.SUCCESS},
+            # {"text": "Warning: Connection unstable", "font_size": "large", "color": Colors.WARNING},
+            # {"text": "Error: Sensor malfunction", "font_size": "large", "color": Colors.ERROR},
         ]
         
         message_counter = 0
@@ -27,7 +27,7 @@ def main():
         running = True
         while running:
             app.handle_events()
-            choice = 3
+            choice = 2
             app.update()
 
             if choice == 2:
