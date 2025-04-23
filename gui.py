@@ -350,7 +350,6 @@ class UI:
         scroll_down_button = None
 
         if faq_manager.selected_question:
-            # ... existing code for displaying selected question ...
             # Draw question
             question_rect = self.draw_panel(
                 surface,
@@ -481,6 +480,43 @@ class UI:
                 scroll_down_button = scroll_down_rect # Use the rect for click detection
 
         return info_panel, question_buttons, scroll_up_button, scroll_down_button
+    
+    def draw_message_panel(self, surface, text, font_size='regular', bg_color=Colors.INFO):
+        """
+        Display a message centered in the navigation panel area with specified background color.
+        
+        Args:
+            surface: The pygame surface to draw on
+            text: The message text to display
+            font_size: Size of the font ('small', 'regular', 'large', or 'title')
+            bg_color: Background color of the message panel
+            
+        Returns:
+            The panel rect object
+        """
+        # Draw the panel with the specified background color
+        message_panel = self.draw_panel(
+            surface,
+            0, Layout.CONTENT_Y,
+            Layout.NAV_WIDTH, Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT,
+            bg_color=bg_color,
+            border_color=Colors.GRAY,
+            border_width=1
+        )
+        
+        # Center the text in the panel
+        text_rect = self.draw_text(
+            surface,
+            text,
+            font_size,
+            Colors.WHITE,  # Use white text for good contrast on colored backgrounds
+            Layout.NAV_WIDTH // 2,
+            Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 2,
+            align="center",
+            max_width=Layout.NAV_WIDTH - (Layout.MARGIN * 2)  # Allow wrapping
+        )
+        
+        return message_panel
     
     def draw_warning(self, surface, message="Warning: Obstacle detected!"):
         # Create glassy transparent overlay
