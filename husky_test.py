@@ -37,7 +37,7 @@ try:
             results = hl.blocks()
             if results and len(results) > 0:
                 print(f"Detected {len(results)} objects")
-                print("Detected objects: ", results[0])
+                print("Detected objects: ", results[0].ID)
             else:
                 print("No objects detected.")
             time.sleep(1)
