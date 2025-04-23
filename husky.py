@@ -1,21 +1,92 @@
 from huskylib import HuskyLensLibrary
 import time
 
+
 hl = HuskyLensLibrary("I2C", "", address=0x32)
-# print(hl.knock())
 
-def warn_user():
-    print("Hey, please move I have somewhere to be!")
+# --- 1. Knock to establish connection ---
+print("Attempting to connect to HuskyLens...")
+knock_attempts = 0
+max_attempts = 5
+while knock_attempts < max_attempts:
+    if hl.knock() == "Knock Recieved":
+        print("HuskyLens connection successful!")
+        break
+    else:
+        print(f"Knock failed. Retrying... ({knock_attempts + 1}/{max_attempts})")
+        knock_attempts += 1
+        time.sleep(0.5)
+else:
+    print("Error: Could not connect to HuskyLens after multiple attempts.")
+    exit() 
 
+# --- 2. Forcefully swap to object recognition ---
+print("Switching to Object Recognition algorithm...")
+if hl.algorthim("ALGORITHM_OBJECT_RECOGNITION") == "Knock Recieved":
+    print("Algorithm switched successfully.")
+else:
+    print("Warning: Failed to confirm algorithm switch.")
+time.sleep(0.5) 
 
+# --- 3. Define IDs for learned objects ---
+# Note: Objects need to be learned using the HuskyLens device itself first.
+# These IDs correspond to the order they were learned (ID 1 is the first, ID 2 the second, etc.)
+PERSON_ID = 1
+OBSTACLE_ID = 2 
+
+# Optional: Assign custom names (if needed, uncomment and adjust)
+# print(f"Assigning name 'Person' to ID {PERSON_ID}")
+# hl.setCustomName("Person", PERSON_ID)
+# time.sleep(0.1)
+# print(f"Assigning name 'Obstacle' to ID {OBSTACLE_ID}")
+# hl.setCustomName("Obstacle", OBSTACLE_ID)
+# time.sleep(0.1)
+
+print("Starting object detection loop...")
+
+# --- 4 & 5. Detect learned objects and run decision function ---
 try:
     while True:
-        hl.requestAll()
-        objects = hl.blocks()
-        if objects:
-            print(f"Detected {len(objects)} objects in front")
-            warn_user()
+      
+        results = hl.learnedBlocks() 
+
+        person_detected = False
+        obstacle_detected = False
+
+        if results:
+            for obj in results:
+                print(f"Detected: Type={obj.type}, ID={obj.ID}, Center=({obj.x},{obj.y}), Size=({obj.width}x{obj.height})")
+                
+                # if obj.ID == PERSON_ID:
+                #     person_detected = True
+                # elif obj.ID == OBSTACLE_ID:
+                #     obstacle_detected = True
+                # Add more 'elif obj.ID == ...' for other learned objects
+
+        # Decision Logic
+        if person_detected:
+            print("ACTION: Person detected! Please move out of the way!")
+            # TODO: Integrate with GUI to display the warning message
+            # Example: call_gui_function_to_show_warning("Person detected! Move!")
+
+        elif obstacle_detected:
+            print("ACTION: Obstacle detected! Engaging obstacle avoidance.")
+            # TODO: Integrate with motor control system for avoidance
+            # Example: call_motor_control_avoidance()
+            # TODO: Integrate with GUI to display status
+            # Example: call_gui_function_to_show_status("Obstacle Avoidance Mode")
         else:
-            print("the path is clear...")
+            print("No relevant objects detected. Continuing monitoring.")
+            pass
+
+        time.sleep(0.5) 
+
 except KeyboardInterrupt:
-    print("Interrupted by the Jaiye")
+    print("Stopping detection.")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+finally:
+    # Optional cleanup if needed (e.g., clear text on HuskyLens screen)
+    # hl.clearText()
+    print("Exiting husky.py")
