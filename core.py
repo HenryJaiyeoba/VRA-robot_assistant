@@ -6,7 +6,7 @@ import random
 import time
 from faq_manager import FAQManager
 # from gui import GUI
-from gui import RobotInterface, display_message, clear_message, Colors
+from gui import RobotInterface, Colors
 # Define FPS locally since it's not exported from gui
 FPS = 30
 
@@ -62,10 +62,13 @@ def main():
             
             # If choice is 2 and no message is currently displayed, show a message
             current_time = time.time()
-            if choice == 2 and not message_displayed:
+            if choice == 2:
                 # Select a message and display it
+                app.is_showing_message = True
                 msg = messages[message_counter % len(messages)]
-                display_message(msg["text"], msg["font_size"], msg["color"])
+                app.message_text = msg["text"]
+                app.message_font_size = msg["font_size"]
+                app.message_bg_color = msg["color"]
                 
                 # Update message tracking
                 message_counter += 1
@@ -74,7 +77,7 @@ def main():
             
             # Clear message after duration expires
             # if message_displayed and (current_time - last_message_time) > message_duration:
-            #     clear_message()
+            #     self.clear_message()
             #     message_displayed = False
             
             # Draw the screen
