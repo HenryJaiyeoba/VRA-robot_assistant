@@ -226,9 +226,11 @@ class HuskyLensLibrary:
                         self.checkOnceAgain=False # Prevent infinite loops
                     return self.processReturnData()
                 print("Read response error, please try again")
-                self.huskylensSer.flushInput()
-                self.huskylensSer.flushOutput()
-                self.huskylensSer.flush()
+                # Only flush for SERIAL protocol
+                if self.proto == "SERIAL":
+                    self.huskylensSer.flushInput()
+                    self.huskylensSer.flushOutput()
+                    self.huskylensSer.flush()
                 return []
 
     def convert_to_class_object(self,data,isBlock):
