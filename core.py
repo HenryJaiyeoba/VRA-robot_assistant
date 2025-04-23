@@ -27,7 +27,7 @@ def main():
         running = True
         while running:
             app.handle_events()
-            choice = 2
+            choice = 3
             app.update()
 
             if choice == 2:
