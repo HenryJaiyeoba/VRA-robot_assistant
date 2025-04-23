@@ -73,9 +73,9 @@ def main():
                 last_message_time = current_time
             
             # Clear message after duration expires
-            if message_displayed and (current_time - last_message_time) > message_duration:
-                clear_message()
-                message_displayed = False
+            # if message_displayed and (current_time - last_message_time) > message_duration:
+            #     clear_message()
+            #     message_displayed = False
             
             # Draw the screen
             app.draw()
