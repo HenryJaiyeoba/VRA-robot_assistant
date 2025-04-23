@@ -49,7 +49,6 @@ print("Starting object detection loop...")
 try:
     while True:      
         results = hl.learnedBlocks() 
-        # Remove the line that overrides results
         # results = True 
         
         person_detected = False
@@ -91,9 +90,7 @@ except KeyboardInterrupt:
 except Exception as e:
     print(f"An error occurred: {e}")
     import traceback
-    traceback.print_exc()  # Print full stack trace for debugging
+    traceback.print_exc()  
 
 finally:
-    # Optional cleanup if needed (e.g., clear text on HuskyLens screen)
-    # hl.clearText()
     print("Exiting husky.py")
