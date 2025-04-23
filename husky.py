@@ -26,7 +26,7 @@ try:
     hl.algorthim("ALGORITHM_OBJECT_RECOGNITION")
     print("Algorithm switched to Object Recognition.")
 except Exception as e:
-    print("Warning: Failed to confirm algorithm switch.")
+    print(f"Warning: Failed to confirm algorithm switch. {str(e)}")
 time.sleep(0.5) 
 
 # --- 3. Define IDs for learned objects ---
@@ -49,19 +49,24 @@ print("Starting object detection loop...")
 try:
     while True:      
         results = hl.learnedBlocks() 
-        print("I got here")
+        # Remove the line that overrides results
+        # results = True 
+        
         person_detected = False
         obstacle_detected = False
 
-        if results:
+        if results and isinstance(results, list) and len(results) > 0:
+            print(f"Detected {len(results)} objects")
             for obj in results:
                 print(f"Detected: Type={obj.type}, ID={obj.ID}, Center=({obj.x},{obj.y}), Size=({obj.width}x{obj.height})")
                 
-                # if obj.ID == PERSON_ID:
-                #     person_detected = True
-                # elif obj.ID == OBSTACLE_ID:
-                #     obstacle_detected = True
+                if obj.ID == PERSON_ID:
+                    person_detected = True
+                elif obj.ID == OBSTACLE_ID:
+                    obstacle_detected = True
                 # Add more 'elif obj.ID == ...' for other learned objects
+        else:
+            print("No objects detected or communication issue.")
 
         # Decision Logic
         if person_detected:
@@ -85,6 +90,8 @@ except KeyboardInterrupt:
     print("Stopping detection.")
 except Exception as e:
     print(f"An error occurred: {e}")
+    import traceback
+    traceback.print_exc()  # Print full stack trace for debugging
 
 finally:
     # Optional cleanup if needed (e.g., clear text on HuskyLens screen)
