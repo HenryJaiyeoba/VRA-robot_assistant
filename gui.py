@@ -482,19 +482,6 @@ class UI:
         return info_panel, question_buttons, scroll_up_button, scroll_down_button
     
     def draw_message_panel(self, surface, text, font_size='regular', bg_color=Colors.INFO):
-        """
-        Display a message centered in the navigation panel area with specified background color.
-        
-        Args:
-            surface: The pygame surface to draw on
-            text: The message text to display
-            font_size: Size of the font ('small', 'regular', 'large', or 'title')
-            bg_color: Background color of the message panel
-            
-        Returns:
-            The panel rect object
-        """
-        # Draw the panel with the specified background color
         message_panel = self.draw_panel(
             surface,
             0, Layout.CONTENT_Y,
@@ -658,17 +645,17 @@ class RobotInterface:
                                 self.status_message = "Viewing FAQ" # Update status
                                 break 
                 else:
-                    # Check only the 'back' button when a question is selected
+                
                      for q_data, q_rect in self.faq_buttons:
                         if q_rect.collidepoint(pos):
                             if q_data == 'back':
                                 self.faq_manager.selected_question = None
-                                self.status_message = "Ready for navigation" # Update status
+                                self.status_message = "Ready for navigation" 
 
     
     def display_building_selection(self, building):
         print(f"Selected: {building}")
-        self.navigating_to = building # Set the target
+        self.navigating_to = building 
         self.status_message = f"Navigating to {building}..." 
 
         self.faq_manager.selected_question = None 
@@ -680,15 +667,8 @@ class RobotInterface:
         self.status_message = "Navigation cancelled. Ready."
 
     def show_custom_message(self, text, font_size="large", bg_color=Colors.INFO):
-        """
-        Display a custom message in the navigation panel with specified styling.
         
-        Args:
-            text: The message text to display
-            font_size: Size of the font ('small', 'regular', 'large', or 'title')
-            bg_color: Background color of the message panel
-        """
-        self.is_showing_message = True  # Updated from show_custom_message to is_showing_message
+        self.is_showing_message = True  
         self.message_text = text
         self.message_font_size = font_size
         self.message_bg_color = bg_color
@@ -703,7 +683,6 @@ class RobotInterface:
         self.warning_time = time.time()
     
     def update(self):
-        # Check if warning should be dismissed
         if self.show_warning and time.time() - self.warning_time > self.warning_duration:
             self.show_warning = False
 
@@ -711,7 +690,7 @@ class RobotInterface:
         title_y = Layout.CONTENT_Y + Layout.MARGIN
         content_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (title_y - Layout.CONTENT_Y) - Layout.MARGIN * 2
         available_height = content_height - 20
-        q_total_height = 50 + 10 # height + spacing
+        q_total_height = 50 + 10 
         self.faq_visible_count = max(1, available_height // q_total_height)
         
         max_offset = max(0, total_questions - self.faq_visible_count)
@@ -720,12 +699,9 @@ class RobotInterface:
     def draw(self):
         screen.fill(Colors.BLACK)
         
-        # Draw header
         self.ui.draw_header(screen, "VRA Mobile Robot:")
         
-        # Draw either the custom message panel or the navigation panel
-        if self.is_showing_message:  # Updated from show_custom_message to is_showing_message
-            # Draw the custom message panel instead of navigation
+        if self.is_showing_message:  
             self.ui.draw_message_panel(
                 screen, 
                 self.message_text,
@@ -733,22 +709,17 @@ class RobotInterface:
                 self.message_bg_color
             )
         else:
-            # Draw the regular navigation panel
             self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
         
-        # Draw info panel with FAQ data and store FAQ button references
         _, self.faq_buttons, self.faq_scroll_up_button, self.faq_scroll_down_button = self.ui.draw_info_panel(
             screen, self.faq_manager, self.faq_scroll_offset
         )
         
-        # Draw footer
         self.ui.draw_footer(screen, self.status_message)
         
-        # Draw warning if active
         if self.show_warning:
             self.ui.draw_warning(screen, self.warning_message)
-        
-        # Update the display
+
         pygame.display.flip()
     
     def clear_message(self):
