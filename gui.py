@@ -590,7 +590,7 @@ class RobotInterface:
         self.navigating_to = None # Track current navigation target
         
         # Custom message panel settings
-        self.show_custom_message = False
+        self.is_showing_message = False  # Renamed from show_custom_message to avoid name conflict
         self.message_text = "Custom Message"
         self.message_font_size = "large"
         self.message_bg_color = Colors.INFO
@@ -688,7 +688,7 @@ class RobotInterface:
             font_size: Size of the font ('small', 'regular', 'large', or 'title')
             bg_color: Background color of the message panel
         """
-        self.show_custom_message = True
+        self.is_showing_message = True  # Updated from show_custom_message to is_showing_message
         self.message_text = text
         self.message_font_size = font_size
         self.message_bg_color = bg_color
@@ -724,7 +724,7 @@ class RobotInterface:
         self.ui.draw_header(screen, "VRA Mobile Robot:")
         
         # Draw either the custom message panel or the navigation panel
-        if self.show_custom_message:
+        if self.is_showing_message:  # Updated from show_custom_message to is_showing_message
             # Draw the custom message panel instead of navigation
             self.ui.draw_message_panel(
                 screen, 
@@ -821,7 +821,7 @@ def clear_message():
     This function can be called from any module to hide the message.
     """
     interface = get_interface()
-    interface.show_custom_message = False
+    interface.is_showing_message = False  # Updated from show_custom_message to is_showing_message
     interface.status_message = "Ready for navigation"
     
     # Force a redraw immediately
