@@ -224,170 +224,75 @@ class HuskyLensLibrary:
              raise e # Propagate the error up
 
     def processReturnData(self, numIdLearnFlag=False, frameFlag=False):
-        # Removed inProduction flag, assuming it's always true
-        byteString=b"" # Initialize as bytes
-        try:
-            if(self.proto == "SERIAL"):
-                # Read header + address + length byte (5 bytes)
-                byteString = self.huskylensSer.read(5)
-                if len(byteString) < 5:
-                    raise TimeoutError(f"Incomplete header read (expected 5, got {len(byteString)})")
-
-                # Determine data length
-                data_len = int(byteString[3]) # This byte indicates the length of the data *payload*
-
-                # Read data bytes
-                if data_len > 0:
-                    data_bytes = self.huskylensSer.read(data_len)
-                    if len(data_bytes) < data_len:
-                        raise TimeoutError(f"Incomplete data read (expected {data_len}, got {len(data_bytes)})")
-                    byteString += data_bytes
-
-                # Read checksum byte
-                checksum_byte = self.huskylensSer.read(1)
-                if len(checksum_byte) < 1:
-                    raise TimeoutError("Incomplete checksum read")
-                byteString += checksum_byte
-
-            else: # I2C
-                # Read header + address + length byte (5 bytes total)
-                byteString = b''
-                for i in range(5):
-                    try:
+        inProduction = True
+        byteString=""
+        if(inProduction):
+            try:
+                if(self.proto == "SERIAL"):
+                    byteString = self.huskylensSer.read(5)
+                    byteString += self.huskylensSer.read(int(byteString[3]))
+                    byteString += self.huskylensSer.read(1)
+                else:
+                    byteString = b''
+                    for i in range(5):
                         byteString += bytes([(self.huskylensSer.read_byte(self.address))])
-                    except Exception as i2c_err: # Catch potential I2C read errors
-                         raise TimeoutError(f"I2C read error during header byte {i+1}: {i2c_err}") from i2c_err
-                if len(byteString) < 5:
-                     raise TimeoutError("Incomplete header read (I2C)")
-
-                # Determine data length
-                data_len = int(byteString[3])
-
-                # Read data bytes + checksum byte (data_len + 1 bytes total)
-                bytes_to_read = data_len + 1
-                for i in range(bytes_to_read):
-                     try:
+                    for i in range(int(byteString[3])+1):
                         byteString += bytes([(self.huskylensSer.read_byte(self.address))])
-                     except Exception as i2c_err:
-                         raise TimeoutError(f"I2C read error during data/checksum byte {i+1}: {i2c_err}") from i2c_err
-                # Check if the total expected length was read (5 + data_len + 1)
-                expected_total_len = 5 + data_len + 1
-                if len(byteString) < expected_total_len:
-                    raise TimeoutError(f"Incomplete read (I2C, expected {expected_total_len}, got {len(byteString)})")
+                commandSplit = self.splitCommandToParts(byteString.hex())
+                # print(commandSplit)
+                if(commandSplit[3] == "2e"):
+                    self.checkOnceAgain=True
+                    return "Knock Recieved"
+                else:
+                    returnData = []
+                    numberOfBlocksOrArrow = int(
+                        commandSplit[4][2:4]+commandSplit[4][0:2], 16)
+                    numberOfIDLearned = int(
+                        commandSplit[4][6:8]+commandSplit[4][4:6], 16)
+                    frameNumber = int(
+                        commandSplit[4][10:12]+commandSplit[4][8:10], 16)
+                    isBlock=True
+                    for i in range(numberOfBlocksOrArrow):
+                        tmpObj=self.getBlockOrArrowCommand()
+                        isBlock=tmpObj[1]
+                        returnData.append(tmpObj[0])
 
-            # Now process the complete byteString
-            commandSplit = self.splitCommandToParts(byteString.hex())
-            # print(commandSplit) # Keep commented out unless debugging
-
-            # Check for standard ACK response (Command 0x2E)
-            if(commandSplit[3] == "2e"):
-                self.checkOnceAgain=True # Reset retry flag on success
-                return "Knock Recieved" # Use a more descriptive success message? Like "OK" or "Command Accepted"?
-
-            # Handle responses containing data (like blocks/arrows)
-            # Expected command for block/arrow info response is 0x29 (RETURN_INFO)
-            elif commandSplit[3] == "29":
-                returnData = []
-                # Payload structure for RETURN_INFO: blocks(2), learned(2), frame(2)
-                # Ensure data field has enough bytes (6 bytes = 12 hex chars)
-                if len(commandSplit[4]) < 12:
-                     raise ValueError(f"RETURN_INFO response data too short: {len(commandSplit[4])} chars ('{commandSplit[4]}')")
-
-                numberOfBlocksOrArrow = int(
-                    commandSplit[4][2:4]+commandSplit[4][0:2], 16) # Bytes 0-1: Number of blocks/arrows
-                numberOfIDLearned = int(
-                    commandSplit[4][6:8]+commandSplit[4][4:6], 16) # Bytes 2-3: Number of IDs learned
-                frameNumber = int(
-                    commandSplit[4][10:12]+commandSplit[4][8:10], 16) # Bytes 4-5: Frame number
-
-                isBlock=None # Determine type based on the *next* packets read
-                for i in range(numberOfBlocksOrArrow):
-                    # Read each block/arrow packet individually
-                    tmpObj=self.getBlockOrArrowCommand() # This now handles its own reading & parsing
-                    isBlock=tmpObj[1] # Store the type from the last packet (assumes all are same type)
-                    returnData.append(tmpObj[0]) # Append the data payload
-
-                if isBlock is None and numberOfBlocksOrArrow > 0:
-                     # This shouldn't happen if getBlockOrArrowCommand works correctly
-                     print("Warning: Could not determine if data is Block or Arrow")
-                     # Default to Block? Or handle as error? Let's default for now.
-                     isBlock = True
-
-                finalData = []
-                tmp = []
-                # print(returnData) # Keep commented out unless debugging
-                for i in returnData:
+                    
+                    # isBlock = True if commandSplit[3] == "2A"else False
+                    
+                    finalData = []
                     tmp = []
-                    # Data format: x(2), y(2), width(2), height(2), ID(2) for blocks
-                    # Or: xTail(2), yTail(2), xHead(2), yHead(2), ID(2) for arrows
-                    # Each value is 16-bit, split into low/high bytes in the hex string
-                    for q in range(0, len(i), 4): # Process 4 hex chars (2 bytes) at a time
-                        low=int(i[q:q+2], 16)
-                        high=int(i[q+2:q+4], 16)
-                        # Combine high and low bytes for 16-bit value
-                        # Original code had a potential bug: val=low+255+high if high>0
-                        # Correct way: val = (high << 8) | low
-                        val = (high << 8) | low
-                        tmp.append(val)
-                    if len(tmp) == 5: # Ensure we got 5 values
+                    # print(returnData)
+                    for i in returnData:
+                        tmp = []
+                        for q in range(0, len(i), 4):
+                            low=int(i[q:q+2], 16)
+                            high=int(i[q+2:q+4], 16)
+                            if(high>0):
+                                val=low+255+high
+                            else:
+                                val=low
+                            tmp.append(val)
                         finalData.append(tmp)
-                    else:
-                        print(f"Warning: Incorrect number of values parsed for object data: {len(tmp)}, raw hex: '{i}'")
-                    tmp = [] # Reset tmp for next object
-
-                self.checkOnceAgain=True # Reset retry flag on success
-                ret=self.convert_to_class_object(finalData,isBlock if isBlock is not None else True) # Pass type, default to Block if unknown
-                if(numIdLearnFlag):
-                    ret.append(numberOfIDLearned)
-                if(frameFlag):
-                    ret.append(frameNumber)
-                return ret
-            else:
-                # Handle other command responses if necessary
-                print(f"Warning: Received unknown command response: {commandSplit[3]}")
-                self.checkOnceAgain=True # Reset retry flag even on unknown response? Maybe.
-                # Return something to indicate unexpected response?
-                return f"Unknown response command: {commandSplit[3]}"
-
-
-        except (TimeoutError, serial.SerialTimeoutException, ValueError, IndexError) as e: # Catch specific communication/parsing errors
-            print(f"Error communicating with/parsing data from HuskyLens: {e}")
-            if(self.checkOnceAgain):
-                 self.checkOnceAgain=False # Prevent infinite loops
-                 # Maybe add a small delay before retrying?
-                 time.sleep(0.1)
-                 print("Retrying command...")
-                 # How to retry? Need to resend the last command.
-                 # Let's return an error indicator for now, retry should happen at higher level if needed.
-                 # return self.processReturnData() # Recursive retry might hide the original command context
-                 return "Retry Failed" # Indicate failure after retry attempt was conceptually needed
-            else:
-                print("Read/Parse response error, please try again")
-                if self.proto == "SERIAL":
-                    try:
-                        self.huskylensSer.flushInput()
-                        self.huskylensSer.flushOutput()
-                        self.huskylensSer.flush()
-                    except Exception as flush_err:
-                        print(f"Error flushing serial port: {flush_err}")
-                return [] # Return empty list on failure
-
-        except Exception as e: # Catch other unexpected errors
-            print(f"Unexpected error processing HuskyLens data: {e}")
-            import traceback
-            traceback.print_exc() # Print stack trace for unexpected errors
-            # Should we retry on unexpected errors? Maybe not.
-            self.checkOnceAgain=False # Avoid potential loops if error persists
-            print("Unexpected error, please try again")
-            if self.proto == "SERIAL":
-                 try:
-                    self.huskylensSer.flushInput()
-                    self.huskylensSer.flushOutput()
-                    self.huskylensSer.flush()
-                 except Exception as flush_err:
-                    print(f"Error flushing serial port: {flush_err}")
-            return [] # Return empty list on failure
-
+                        tmp = []
+                    self.checkOnceAgain=True
+                    ret=self.convert_to_class_object(finalData,isBlock)
+                    if(numIdLearnFlag):
+                        ret.append(numberOfIDLearned)
+                    if(frameFlag):
+                        ret.append(frameNumber)
+                    return ret
+            except:
+                if(self.checkOnceAgain):
+                    self.huskylensSer.timeout=5
+                    self.checkOnceAgain=False
+                    self.huskylensSer.timeout=.5
+                    return self.processReturnData()
+                print("Read response error, please try again")
+                self.huskylensSer.flushInput()
+                self.huskylensSer.flushOutput()
+                self.huskylensSer.flush()
+                return []
     def convert_to_class_object(self,data,isBlock):
         tmp=[]
         for i in data:
