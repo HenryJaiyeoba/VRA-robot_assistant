@@ -42,7 +42,7 @@ def main():
         
         # Message display counter and delay
         message_counter = 0
-        message_duration = 3  # seconds to show each message
+        message_duration = 3000  # seconds to show each message
         last_message_time = 0
         
         # Flag to track if a message is currently displayed
