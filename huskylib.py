@@ -212,11 +212,18 @@ class HuskyLensLibrary:
                     if(frameFlag):
                         ret.append(frameNumber)
                     return ret
-            except:
+            except Exception as e:
+                print("Error in reading data from HuskyLens", e)
                 if(self.checkOnceAgain):
-                    self.huskylensSer.timeout=5
-                    self.checkOnceAgain=False
-                    self.huskylensSer.timeout=.5
+                     # Only set timeout for SERIAL protocol
+                    if self.proto == "SERIAL":
+                        self.huskylensSer.timeout=5
+                        self.checkOnceAgain=False
+                        self.huskylensSer.timeout=.5
+                    else:
+                        # For I2C, maybe just retry without changing timeout?
+                        # Or implement a different retry mechanism if needed.
+                        self.checkOnceAgain=False # Prevent infinite loops
                     return self.processReturnData()
                 print("Read response error, please try again")
                 self.huskylensSer.flushInput()
