@@ -100,7 +100,7 @@ class HuskyLensLibrary:
             self.huskylensSer.flush()
 
         elif (proto == "I2C"):
-            import smbus2 as smbus # Import smbus2 and alias it as smbus
+            import smbus
             self.huskylensSer = smbus.SMBus(channel)
         self.lastCmdSent = ""
 
@@ -123,105 +123,35 @@ class HuskyLensLibrary:
     def cmdToBytes(self, cmd):
         return bytes.fromhex(cmd)
 
-    def splitCommandToParts(self, str_in): # Renamed str to str_in to avoid shadowing built-in
-        # print(f"We got this str=> {str_in}")
-        # Add basic length check
-        if len(str_in) < 10: # Minimum length: header(4)+addr(2)+len(2)+cmd(2) = 10
-             raise ValueError(f"Received command string too short: {len(str_in)} chars ('{str_in}')")
-
-        headers = str_in[0:4]
-        address = str_in[4:6]
-        try:
-            # Ensure the slice is valid before converting
-            data_length_hex = str_in[6:8]
-            if not data_length_hex:
-                 raise ValueError("Data length field is empty")
-            data_length = int(data_length_hex, 16) # Catch potential ValueError here too
-        except ValueError as e:
-            raise ValueError(f"Invalid data length field: '{str_in[6:8]}'") from e
-
-        command = str_in[8:10]
-
-        expected_len = 12 + data_length * 2 # header(4)+addr(2)+len(2)+cmd(2)+data(N*2)+chk(2)
-        if len(str_in) < expected_len:
-            raise ValueError(f"Command string length mismatch. Expected at least {expected_len}, got {len(str_in)} ('{str_in}')")
-
+    def splitCommandToParts(self, str):
+        # print(f"We got this str=> {str}")
+        headers = str[0:4]
+        address = str[4:6]
+        data_length = int(str[6:8], 16)
+        command = str[8:10]
         if(data_length > 0):
-            data = str_in[10:10+data_length*2]
+            data = str[10:10+data_length*2]
         else:
-            data = '' # Changed from [] to ''
-        # checkSum = str_in[2*(6+data_length-1):2*(6+data_length-1)+2] # Original calculation
-        checkSum = str_in[10 + data_length*2 : 12 + data_length*2] # Simplified index calculation
-
-        # Ensure checksum slice is valid
-        if len(checkSum) < 2:
-             raise ValueError(f"Could not extract checksum. String: '{str_in}', Calculated slice: [{10 + data_length*2}:{12 + data_length*2}]")
-
+            data = []
+        checkSum = str[2*(6+data_length-1):2*(6+data_length-1)+2]
 
         return [headers, address, data_length, command, data, checkSum]
 
     def getBlockOrArrowCommand(self):
-        # This function reads subsequent block/arrow data packets after the initial response header
-        # It assumes the initial response indicated how many blocks/arrows to expect.
-        # The reading logic here needs similar robustness checks as processReturnData
-        try:
-            if(self.proto == "SERIAL"):
-                # Read header (5 bytes)
-                byteString = self.huskylensSer.read(5)
-                if len(byteString) < 5:
-                    raise TimeoutError(f"Incomplete block/arrow header read (expected 5, got {len(byteString)})")
+        if(self.proto == "SERIAL"):
+            byteString = self.huskylensSer.read(5)
+            byteString += self.huskylensSer.read(int(byteString[3]))
+            byteString += self.huskylensSer.read(1)
+        else:
+            byteString = b''
+            for i in range(5):
+                byteString += bytes([(self.huskylensSer.read_byte(self.address))])
+            for i in range(int(byteString[3])+1):
+                byteString += bytes([(self.huskylensSer.read_byte(self.address))])
 
-                # Determine data length
-                data_len = int(byteString[3])
-
-                # Read data bytes
-                if data_len > 0:
-                    data_bytes = self.huskylensSer.read(data_len)
-                    if len(data_bytes) < data_len:
-                        raise TimeoutError(f"Incomplete block/arrow data read (expected {data_len}, got {len(data_bytes)})")
-                    byteString += data_bytes
-
-                # Read checksum byte
-                checksum_byte = self.huskylensSer.read(1)
-                if len(checksum_byte) < 1:
-                    raise TimeoutError("Incomplete block/arrow checksum read")
-                byteString += checksum_byte
-
-            else: # I2C
-                 # Read header (5 bytes)
-                byteString = b''
-                for i in range(5):
-                    try:
-                        byteString += bytes([(self.huskylensSer.read_byte(self.address))])
-                    except Exception as i2c_err:
-                         raise TimeoutError(f"I2C read error during block/arrow header byte {i+1}: {i2c_err}") from i2c_err
-                if len(byteString) < 5:
-                     raise TimeoutError("Incomplete block/arrow header read (I2C)")
-
-                # Determine data length
-                data_len = int(byteString[3])
-
-                # Read data bytes + checksum byte (data_len + 1 bytes total)
-                bytes_to_read = data_len + 1
-                for i in range(bytes_to_read):
-                     try:
-                        byteString += bytes([(self.huskylensSer.read_byte(self.address))])
-                     except Exception as i2c_err:
-                         raise TimeoutError(f"I2C read error during block/arrow data/checksum byte {i+1}: {i2c_err}") from i2c_err
-                # Check total length
-                expected_total_len = 5 + data_len + 1
-                if len(byteString) < expected_total_len:
-                    raise TimeoutError(f"Incomplete block/arrow read (I2C, expected {expected_total_len}, got {len(byteString)})")
-
-            # Now parse the received block/arrow data packet
-            commandSplit = self.splitCommandToParts(byteString.hex())
-            isBlock = True if commandSplit[3] == "2a" else False # Command 0x2A for block, 0x2B for arrow
-            return (commandSplit[4], isBlock)
-
-        except (TimeoutError, serial.SerialTimeoutException, ValueError) as e:
-             print(f"Error reading block/arrow data: {e}")
-             # Re-raise or return an error indicator? Re-raising might be better.
-             raise e # Propagate the error up
+        commandSplit = self.splitCommandToParts(byteString.hex())
+        isBlock = True if commandSplit[3] == "2a" else False
+        return (commandSplit[4],isBlock)
 
     def processReturnData(self, numIdLearnFlag=False, frameFlag=False):
         inProduction = True
@@ -293,14 +223,11 @@ class HuskyLensLibrary:
                 self.huskylensSer.flushOutput()
                 self.huskylensSer.flush()
                 return []
+
     def convert_to_class_object(self,data,isBlock):
         tmp=[]
         for i in data:
-            if len(i) != 5: # Add check for correct number of elements
-                print(f"Warning: Skipping object data with incorrect length: {i}")
-                continue
             if(isBlock):
-                # Ensure indices are valid before accessing
                 obj = Block(i[0],i[1],i[2],i[3],i[4])
             else:
                 obj = Arrow(i[0],i[1],i[2],i[3],i[4])
@@ -417,11 +344,7 @@ class HuskyLensLibrary:
     def learnedBlocks(self):
         cmd = self.cmdToBytes(commandHeaderAndAddress+"002434")
         self.writeToHuskyLens(cmd)
-        result = self.processReturnData()
-        # Handle empty results to prevent index errors
-        if not result or isinstance(result, str) or len(result) == 0:
-            return []
-        return result[0]
+        return self.processReturnData()[0]
 
     def learnedArrows(self):
         cmd = self.cmdToBytes(commandHeaderAndAddress+"002535")
