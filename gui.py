@@ -572,6 +572,7 @@ class RobotInterface:
         self.warning_message = ""
         self.warning_time = 0
         self.warning_duration = 3  
+        self.clock = clock
         
         # Initialize FAQ manager
         self.faq_manager = FAQManager()
@@ -613,20 +614,7 @@ class RobotInterface:
                 elif event.key == K_f: # Press 'f' to go back to building selection
                     self.navigating_to = None
                     self.status_message = "Ready for navigation"
-                elif event.key == K_m: # Press 'm' to show custom message
-                    if not self.show_custom_message:
-                        # Display a custom message with large font on success background
-                        self.show_custom_message("Custom Message Panel", "large", Colors.SUCCESS)
-                    else:
-                        # Toggle off if already showing
-                        self.show_custom_message = False
-                        self.status_message = "Ready for navigation"
-                elif event.key == K_1: # Different styles of message panels
-                    self.show_custom_message("INFO MESSAGE", "regular", Colors.INFO)
-                elif event.key == K_2:
-                    self.show_custom_message("WARNING MESSAGE", "large", Colors.WARNING)
-                elif event.key == K_3:
-                    self.show_custom_message("ERROR MESSAGE", "title", Colors.ERROR)
+                # Keyboard triggers for message panel removed (m, 1, 2, 3 keys)
             
             elif event.type == MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
