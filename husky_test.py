@@ -31,7 +31,7 @@ time.sleep(0.5)
 
 try:
     while True:
-        results = hl.learnedBlocks()
+        results = hl.blocks()
         if results:
             print(f"Detected {len(results)} objects")
             print("Detected objects: ", results)
