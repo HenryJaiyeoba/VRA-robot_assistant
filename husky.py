@@ -22,9 +22,10 @@ else:
 
 # --- 2. Forcefully swap to object recognition ---
 print("Switching to Object Recognition algorithm...")
-if hl.algorthim("ALGORITHM_OBJECT_RECOGNITION") == "Knock Recieved":
-    print("Algorithm switched successfully.")
-else:
+try:
+    hl.algorthim("ALGORITHM_OBJECT_RECOGNITION")
+    print("Algorithm switched to Object Recognition.")
+except Exception as e:
     print("Warning: Failed to confirm algorithm switch.")
 time.sleep(0.5) 
 
@@ -46,10 +47,9 @@ print("Starting object detection loop...")
 
 # --- 4 & 5. Detect learned objects and run decision function ---
 try:
-    while True:
-      
+    while True:      
         results = hl.learnedBlocks() 
-
+        print("I got here")
         person_detected = False
         obstacle_detected = False
 
