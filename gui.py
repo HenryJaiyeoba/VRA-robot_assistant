@@ -587,6 +587,12 @@ class RobotInterface:
         # Status message
         self.status_message = "Ready for navigation"
         self.navigating_to = None # Track current navigation target
+        
+        # Custom message panel settings
+        self.show_custom_message = False
+        self.message_text = "Custom Message"
+        self.message_font_size = "large"
+        self.message_bg_color = Colors.INFO
     
     def handle_events(self):
         """Process pygame events"""
@@ -607,6 +613,20 @@ class RobotInterface:
                 elif event.key == K_f: # Press 'f' to go back to building selection
                     self.navigating_to = None
                     self.status_message = "Ready for navigation"
+                elif event.key == K_m: # Press 'm' to show custom message
+                    if not self.show_custom_message:
+                        # Display a custom message with large font on success background
+                        self.show_custom_message("Custom Message Panel", "large", Colors.SUCCESS)
+                    else:
+                        # Toggle off if already showing
+                        self.show_custom_message = False
+                        self.status_message = "Ready for navigation"
+                elif event.key == K_1: # Different styles of message panels
+                    self.show_custom_message("INFO MESSAGE", "regular", Colors.INFO)
+                elif event.key == K_2:
+                    self.show_custom_message("WARNING MESSAGE", "large", Colors.WARNING)
+                elif event.key == K_3:
+                    self.show_custom_message("ERROR MESSAGE", "title", Colors.ERROR)
             
             elif event.type == MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
@@ -671,6 +691,23 @@ class RobotInterface:
         self.navigating_to = None
         self.status_message = "Navigation cancelled. Ready."
 
+    def show_custom_message(self, text, font_size="large", bg_color=Colors.INFO):
+        """
+        Display a custom message in the navigation panel with specified styling.
+        
+        Args:
+            text: The message text to display
+            font_size: Size of the font ('small', 'regular', 'large', or 'title')
+            bg_color: Background color of the message panel
+        """
+        self.show_custom_message = True
+        self.message_text = text
+        self.message_font_size = font_size
+        self.message_bg_color = bg_color
+        self.status_message = "Displaying custom message"
+        
+        # Temporarily hide navigation
+        self.navigating_to = None
         
     def show_warning_message(self, message):
         self.show_warning = True
@@ -697,7 +734,19 @@ class RobotInterface:
         
         # Draw header
         self.ui.draw_header(screen, "VRA Mobile Robot:")
-        self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
+        
+        # Draw either the custom message panel or the navigation panel
+        if self.show_custom_message:
+            # Draw the custom message panel instead of navigation
+            self.ui.draw_message_panel(
+                screen, 
+                self.message_text,
+                self.message_font_size,
+                self.message_bg_color
+            )
+        else:
+            # Draw the regular navigation panel
+            self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
         
         # Draw info panel with FAQ data and store FAQ button references
         _, self.faq_buttons, self.faq_scroll_up_button, self.faq_scroll_down_button = self.ui.draw_info_panel(
@@ -722,7 +771,77 @@ class RobotInterface:
             clock.tick(FPS)
         
         # Clean up
-            GPIO.cleanup()
+        GPIO.cleanup()
         pygame.quit()
         sys.exit()
+
+# Create a global instance that can be imported by other modules
+robot_interface = None
+
+def initialize_interface():
+    """
+    Initialize the robot interface if it hasn't been initialized yet.
+    Should be called once at the beginning of the program.
+    
+    Returns:
+        The global robot_interface instance
+    """
+    global robot_interface
+    if robot_interface is None:
+        robot_interface = RobotInterface()
+    return robot_interface
+
+def get_interface():
+    """
+    Get the global robot_interface instance.
+    Initialize it if it doesn't exist yet.
+    
+    Returns:
+        The global robot_interface instance
+    """
+    global robot_interface
+    if robot_interface is None:
+        return initialize_interface()
+    return robot_interface
+
+def display_message(text, font_size="large", bg_color=None):
+    """
+    Display a custom message in the navigation panel.
+    This function can be called from any module to show a message.
+    
+    Args:
+        text: The message text to display
+        font_size: Size of the font ('small', 'regular', 'large', or 'title')
+        bg_color: Background color of the message panel (uses Colors.INFO by default)
+    """
+    interface = get_interface()
+    
+    # Use appropriate color based on message type if not specified
+    if bg_color is None:
+        bg_color = Colors.INFO
+    
+    # Need to call the method by its proper name
+    interface.show_custom_message(text, font_size, bg_color)
+    
+    # Force a redraw immediately to show the message
+    interface.draw()
+    pygame.display.flip()
+    
+def clear_message():
+    """
+    Clear the custom message from the navigation panel.
+    This function can be called from any module to hide the message.
+    """
+    interface = get_interface()
+    interface.show_custom_message = False
+    interface.status_message = "Ready for navigation"
+    
+    # Force a redraw immediately
+    interface.draw()
+    pygame.display.flip()
+
+# Main entry point
+if __name__ == "__main__":
+    interface = initialize_interface()
+    interface.run()
 
