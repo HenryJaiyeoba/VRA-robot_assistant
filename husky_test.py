@@ -1,4 +1,4 @@
-from huskylib import HuskyLensLibrary
+from huskylibTest import HuskyLensLibrary
 import time
 
 
@@ -29,14 +29,25 @@ except Exception as e:
     print(f"Warning: Failed to confirm algorithm switch. {str(e)}")
 time.sleep(0.5) 
 
+# --- 3. Main detection loop ---
 try:
+    print("Starting object detection...")
     while True:
-        results = hl.blocks()
-        if results:
-            print(f"Detected {len(results)} objects")
-            print("Detected objects: ", results)
-        else:
-            print("No objects detected.")
-        time.sleep(1)
+        try:
+            results = hl.blocks()
+            if results and len(results) > 0:
+                print(f"Detected {len(results)} objects")
+                print("Detected objects: ", results)
+            else:
+                print("No objects detected.")
+            time.sleep(1)
+        except IndexError as ie:
+            print(f"Index error during detection: {ie}")
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error during detection: {e}")
+            time.sleep(1)
+except KeyboardInterrupt:
+    print("Program stopped by user")
 except Exception as e:
-    print(e)
+    print(f"Unexpected error: {e}")
