@@ -75,13 +75,15 @@ class HuskyLensLibrary:
         self.proto = proto
         self.address = address
         self.checkOnceAgain=True
+        self.timeout_value = 0.5  # Default timeout value
+        
         if(proto == "SERIAL"):
             self.huskylensSer =serial.Serial(
                 baudrate=speed,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
-                timeout=.5
+                timeout=self.timeout_value
             )
             self.huskylensSer.dtr = False
             self.huskylensSer.rts = False
@@ -138,36 +140,47 @@ class HuskyLensLibrary:
         return [headers, address, data_length, command, data, checkSum]
 
     def getBlockOrArrowCommand(self):
-        if(self.proto == "SERIAL"):
-            byteString = self.huskylensSer.read(5)
-            byteString += self.huskylensSer.read(int(byteString[3]))
-            byteString += self.huskylensSer.read(1)
-        else:
-            byteString = b''
-            for i in range(5):
-                byteString += bytes([(self.huskylensSer.read_byte(self.address))])
-            for i in range(int(byteString[3])+1):
-                byteString += bytes([(self.huskylensSer.read_byte(self.address))])
+        try:
+            if(self.proto == "SERIAL"):
+                byteString = self.huskylensSer.read(5)
+                byteString += self.huskylensSer.read(int(byteString[3]))
+                byteString += self.huskylensSer.read(1)
+            else:
+                byteString = b''
+                for i in range(5):
+                    byteString += bytes([(self.huskylensSer.read_byte(self.address))])
+                for i in range(int(byteString[3])+1):
+                    byteString += bytes([(self.huskylensSer.read_byte(self.address))])
 
-        commandSplit = self.splitCommandToParts(byteString.hex())
-        isBlock = True if commandSplit[3] == "2a" else False
-        return (commandSplit[4],isBlock)
+            commandSplit = self.splitCommandToParts(byteString.hex())
+            isBlock = True if commandSplit[3] == "2a" else False
+            return (commandSplit[4],isBlock)
+        except Exception as e:
+            print(f"Error in getBlockOrArrowCommand: {str(e)}")
+            return ([], True)  # Return empty data but maintain expected tuple structure
 
     def processReturnData(self, numIdLearnFlag=False, frameFlag=False):
         inProduction = True
-        byteString=""
-        if(inProduction):
-            try:
+        byteString = b''
+        try:
+            if(inProduction):
                 if(self.proto == "SERIAL"):
                     byteString = self.huskylensSer.read(5)
+                    if len(byteString) < 4:  # Check if we have enough data
+                        return []
                     byteString += self.huskylensSer.read(int(byteString[3]))
                     byteString += self.huskylensSer.read(1)
                 else:
-                    byteString = b''
                     for i in range(5):
                         byteString += bytes([(self.huskylensSer.read_byte(self.address))])
+                    if len(byteString) < 4:  # Check if we have enough data
+                        return []
                     for i in range(int(byteString[3])+1):
                         byteString += bytes([(self.huskylensSer.read_byte(self.address))])
+
+                if len(byteString) < 5:  # Ensure minimum length
+                    return []
+
                 commandSplit = self.splitCommandToParts(byteString.hex())
                 # print(commandSplit)
                 if(commandSplit[3] == "2e"):
@@ -175,19 +188,25 @@ class HuskyLensLibrary:
                     return "Knock Recieved"
                 else:
                     returnData = []
-                    numberOfBlocksOrArrow = int(
-                        commandSplit[4][2:4]+commandSplit[4][0:2], 16)
-                    numberOfIDLearned = int(
-                        commandSplit[4][6:8]+commandSplit[4][4:6], 16)
-                    frameNumber = int(
-                        commandSplit[4][10:12]+commandSplit[4][8:10], 16)
+                    # Check if we have enough data before parsing
+                    if len(commandSplit[4]) >= 12:
+                        numberOfBlocksOrArrow = int(
+                            commandSplit[4][2:4]+commandSplit[4][0:2], 16)
+                        numberOfIDLearned = int(
+                            commandSplit[4][6:8]+commandSplit[4][4:6], 16)
+                        frameNumber = int(
+                            commandSplit[4][10:12]+commandSplit[4][8:10], 16)
+                    else:
+                        # Not enough data to process
+                        return []
+                        
                     isBlock=True
                     for i in range(numberOfBlocksOrArrow):
                         tmpObj=self.getBlockOrArrowCommand()
                         isBlock=tmpObj[1]
-                        returnData.append(tmpObj[0])
+                        if tmpObj[0]:  # Only add if there's actual data
+                            returnData.append(tmpObj[0])
 
-                    
                     # isBlock = True if commandSplit[3] == "2A"else False
                     
                     finalData = []
@@ -212,26 +231,34 @@ class HuskyLensLibrary:
                     if(frameFlag):
                         ret.append(frameNumber)
                     return ret
-            except:
-                if(self.checkOnceAgain):
-                    self.huskylensSer.timeout=5
-                    self.checkOnceAgain=False
-                    self.huskylensSer.timeout=.5
-                    return self.processReturnData()
-                print("Read response error, please try again")
+        except IndexError as ie:
+            print(f"Index error in processReturnData: {str(ie)}")
+            return []
+        except Exception as e:
+            if(self.proto == "SERIAL" and self.checkOnceAgain):
+                # For serial connections, we can adjust timeout and retry
+                old_timeout = self.huskylensSer.timeout
+                self.huskylensSer.timeout = 5
+                self.checkOnceAgain = False
+                result = self.processReturnData()
+                self.huskylensSer.timeout = old_timeout
+                return result
+            print(f"Error in processReturnData: {str(e)}")
+            if self.proto == "SERIAL":
                 self.huskylensSer.flushInput()
                 self.huskylensSer.flushOutput()
                 self.huskylensSer.flush()
-                return []
+            return []
 
     def convert_to_class_object(self,data,isBlock):
         tmp=[]
         for i in data:
-            if(isBlock):
-                obj = Block(i[0],i[1],i[2],i[3],i[4])
-            else:
-                obj = Arrow(i[0],i[1],i[2],i[3],i[4])
-            tmp.append(obj)
+            if len(i) >= 5:  # Ensure we have enough data
+                if(isBlock):
+                    obj = Block(i[0],i[1],i[2],i[3],i[4])
+                else:
+                    obj = Arrow(i[0],i[1],i[2],i[3],i[4])
+                tmp.append(obj)
         return tmp
 
     def knock(self):
@@ -327,9 +354,17 @@ class HuskyLensLibrary:
         return self.processReturnData()
 
     def blocks(self):
-        cmd = self.cmdToBytes(commandHeaderAndAddress+"002131")
-        self.writeToHuskyLens(cmd)
-        return self.processReturnData()[0]
+        try:
+            cmd = self.cmdToBytes(commandHeaderAndAddress+"002131")
+            self.writeToHuskyLens(cmd)
+            result = self.processReturnData()
+            # Ensure we return a valid list even if processReturnData returns empty or non-list
+            if isinstance(result, list) and len(result) > 0:
+                return result
+            return []
+        except Exception as e:
+            print(f"Error in blocks method: {str(e)}")
+            return []
 
     def arrows(self):
         cmd = self.cmdToBytes(commandHeaderAndAddress+"002232")
