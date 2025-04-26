@@ -1,3 +1,24 @@
+"""
+VRA (Visual Robot Assistant) Graphical User Interface
+
+This module implements the visual interface for a robotic assistant navigation system.
+It provides a touchscreen interface for users to:
+- Select navigation destinations
+- View frequently asked questions
+- Display various notification messages and warnings
+
+The GUI is designed for a Raspberry Pi with touchscreen display, showing navigation 
+options in the left panel and informational content in the right panel.
+
+Dependencies:
+- pygame for rendering graphics and handling user input
+- RPi.GPIO for Raspberry Pi GPIO control
+- faq_manager for FAQ data handling
+
+Author: HenryJaiyeoba
+Last updated: April 26, 2025
+"""
+
 import pygame
 import sys
 import os
@@ -9,6 +30,7 @@ from faq_manager import FAQManager
 
 pygame.init()
 
+# Screen dimensions (set for Raspberry Pi touchscreen)
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 480
 
@@ -22,6 +44,11 @@ FPS = 30
 
 #color scheme def 
 class Colors:
+    """
+    Define color constants used throughout the application.
+    All colors are in RGB format (red, green, blue) with values from 0-255.
+    """
+    # Basic colors
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
     GRAY = (100, 100, 100)
@@ -50,21 +77,40 @@ class Colors:
 
 
 class Layout:
+    """
+    Define layout constants used for positioning UI elements.
+    These measurements ensure consistent spacing and alignments throughout the interface.
+    All values are in pixels.
+    """
+    # Header section measurements
     HEADER_HEIGHT = 60
     
+    # Content area begins after header
     CONTENT_Y = HEADER_HEIGHT
     CONTENT_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT
     
+    # Navigation panel (left side) width
     NAV_WIDTH = SCREEN_WIDTH * 0.4
     
+    # Info panel (right side) begins after navigation panel
     INFO_X = NAV_WIDTH
     INFO_WIDTH = SCREEN_WIDTH - NAV_WIDTH
+    
+    # Footer section measurements
     FOOTER_HEIGHT = 50
     FOOTER_Y = SCREEN_HEIGHT - FOOTER_HEIGHT
+    
+    # Standard padding and margin sizes
     PADDING = 10
     MARGIN = 20
 
 def load_fonts():
+    """
+    Initialize and return a dictionary of pygame font objects at different sizes.
+    
+    Returns:
+        dict: Dictionary of font objects with keys 'small', 'regular', 'large', and 'title'
+    """
     fonts = {
         'small': pygame.font.Font(None, 24),
         'regular': pygame.font.Font(None, 32),
@@ -74,10 +120,35 @@ def load_fonts():
     return fonts
 
 class UI:
+    """
+    UI component class responsible for drawing all graphical elements.
+    
+    This class handles the rendering of all graphical elements in the interface,
+    from text and buttons to entire panels. It maintains consistent styling
+    and positioning throughout the application.
+    """
+    
     def __init__(self):
+        """Initialize UI with loaded fonts."""
         self.fonts = load_fonts()
         
     def draw_text(self, surface, text, font_size, color, x, y, align="left", max_width=None):
+        """
+        Draw text on a surface with various alignment and wrapping options.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            text (str): The text to render
+            font_size (str): Size key ('small', 'regular', 'large', 'title')
+            color (tuple): RGB color tuple
+            x (int): X-coordinate for positioning
+            y (int): Y-coordinate for positioning
+            align (str): Text alignment ('left', 'center', 'right')
+            max_width (int, optional): Maximum width for text wrapping
+            
+        Returns:
+            pygame.Rect: Bounding rectangle of rendered text
+        """
         font = self.fonts.get(font_size, self.fonts['regular'])
 
         if max_width:
@@ -143,7 +214,24 @@ class UI:
     def draw_button(self, surface, text, x, y, width=200, height=50, 
                    color=Colors.PRIMARY, text_color=Colors.WHITE, 
                    border_radius=10, font_size='regular'):
+        """
+        Draw a button with text on a surface.
         
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            text (str): Button text
+            x (int): X-coordinate for button position
+            y (int): Y-coordinate for button position
+            width (int): Button width
+            height (int): Button height
+            color (tuple): RGB color tuple for button
+            text_color (tuple): RGB color tuple for text
+            border_radius (int): Radius for rounded corners
+            font_size (str): Size key for font ('small', 'regular', 'large', 'title')
+            
+        Returns:
+            pygame.Rect: The rectangle area of the button, useful for click detection
+        """
         button_rect = pygame.Rect(x, y, width, height)
         pygame.draw.rect(surface, color, button_rect, border_radius=border_radius)
         
@@ -157,6 +245,23 @@ class UI:
     def draw_panel(self, surface, x, y, width, height, 
                   bg_color=Colors.WHITE, border_color=None, 
                   border_width=0, border_radius=0):
+        """
+        Draw a panel which can be used for grouping other UI elements.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            x (int): X-coordinate for panel position
+            y (int): Y-coordinate for panel position
+            width (int): Panel width
+            height (int): Panel height
+            bg_color (tuple): RGB color tuple for background
+            border_color (tuple, optional): RGB color tuple for border
+            border_width (int, optional): Width of the border
+            border_radius (int, optional): Radius for rounded corners
+            
+        Returns:
+            pygame.Rect: The rectangle area of the panel
+        """
         panel_rect = pygame.Rect(x, y, width, height)
         
         pygame.draw.rect(surface, bg_color, panel_rect, border_radius=border_radius)
@@ -168,6 +273,16 @@ class UI:
         return panel_rect
     
     def draw_header(self, surface, title="VRA Interface"):
+        """
+        Draw the header section at the top of the interface.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            title (str): Title text to display in the header
+            
+        Returns:
+            pygame.Rect: The rectangle area of the header
+        """
         # header background
         header_rect = self.draw_panel(
             surface, 
@@ -190,6 +305,16 @@ class UI:
         return header_rect
     
     def draw_footer(self, surface, status_text="Ready"):
+        """
+        Draw the footer section at the bottom of the interface.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            status_text (str): Status text to display in the footer
+            
+        Returns:
+            pygame.Rect: The rectangle area of the footer
+        """
         #footer background
         footer_rect = self.draw_panel(
             surface,
@@ -212,6 +337,16 @@ class UI:
         return footer_rect
     
     def draw_navigation_panel(self, surface, navigating_to=None):
+        """
+        Draw the navigation panel with destination options.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            navigating_to (str, optional): Current navigation target to display status
+            
+        Returns:
+            dict: Dictionary containing button areas for navigation
+        """
         nav_panel = self.draw_panel(
             surface,
             0, Layout.CONTENT_Y,
@@ -320,6 +455,17 @@ class UI:
         return buttons
     
     def draw_info_panel(self, surface, faq_manager, scroll_offset=0):
+        """
+        Draw the information panel displaying FAQs.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            faq_manager (FAQManager): Instance managing FAQ data
+            scroll_offset (int, optional): Current scroll position for FAQs
+            
+        Returns:
+            tuple: Contains the info panel rect, list of question buttons, and scroll button rects
+        """
         # info panel bg
         info_panel = self.draw_panel(
             surface,
@@ -482,6 +628,18 @@ class UI:
         return info_panel, question_buttons, scroll_up_button, scroll_down_button
     
     def draw_message_panel(self, surface, text, font_size='regular', bg_color=Colors.INFO):
+        """
+        Draw a message panel for displaying temporary messages.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            text (str): Message text
+            font_size (str): Size key for font ('small', 'regular', 'large', 'title')
+            bg_color (tuple): RGB color tuple for background
+            
+        Returns:
+            pygame.Rect: The rectangle area of the message panel
+        """
         message_panel = self.draw_panel(
             surface,
             0, Layout.CONTENT_Y,
@@ -506,6 +664,16 @@ class UI:
         return message_panel
     
     def draw_warning(self, surface, message="Warning: Obstacle detected!"):
+        """
+        Draw a warning overlay with an optional message.
+        
+        Args:
+            surface (pygame.Surface): Surface to draw on
+            message (str): Warning message text
+            
+        Returns:
+            pygame.Rect: The rectangle area of the warning panel
+        """
         # Create glassy transparent overlay
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 128))  # semi-transparent black
@@ -552,13 +720,27 @@ class UI:
         return warning_panel
 
 class RobotInterface:
+    """
+    Main interface controller for the VRA Robot Assistant.
+    
+    This class is responsible for:
+    - Managing the overall application state
+    - Handling user input (keyboard, mouse)
+    - Updating UI elements
+    - Coordinating between different components
+    
+    It serves as the central hub connecting the UI rendering with 
+    application logic and user interactions.
+    """
+    
     def __init__(self):
+        """Initialize the robot interface with all necessary components."""
         self.ui = UI()
         self.running = True
         self.show_warning = False
         self.warning_message = ""
         self.warning_time = 0
-        self.warning_duration = 3  
+        self.warning_duration = 3  # Duration in seconds to display warnings
         self.clock = clock
         
         # Initialize FAQ manager
@@ -583,7 +765,15 @@ class RobotInterface:
         self.message_bg_color = Colors.INFO
     
     def handle_events(self):
-        """Process pygame events"""
+        """
+        Process all pygame events including keyboard and mouse inputs.
+        
+        This method handles:
+        - Quit events
+        - Keyboard navigation (arrows, escape)
+        - Mouse clicks on buttons, panels, and FAQ items
+        - Navigation selections and cancellations
+        """
         for event in pygame.event.get():
             if event.type == QUIT:
                 self.running = False
@@ -606,7 +796,7 @@ class RobotInterface:
             elif event.type == MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 
-            
+                # Handle navigation panel button clicks
                 if self.nav_buttons: 
                     if self.navigating_to:
                         if self.nav_buttons.get('cancel_button') and self.nav_buttons['cancel_button'].collidepoint(pos):
@@ -645,8 +835,8 @@ class RobotInterface:
                                 self.status_message = "Viewing FAQ" # Update status
                                 break 
                 else:
-                
-                     for q_data, q_rect in self.faq_buttons:
+                    # Check only the 'back' button when a question is selected
+                    for q_data, q_rect in self.faq_buttons:
                         if q_rect.collidepoint(pos):
                             if q_data == 'back':
                                 self.faq_manager.selected_question = None
@@ -654,20 +844,38 @@ class RobotInterface:
 
     
     def display_building_selection(self, building):
+        """
+        Set the current navigation target to a specific building.
+        
+        Args:
+            building (str): Name of the building to navigate to
+        """
         print(f"Selected: {building}")
         self.navigating_to = building 
         self.status_message = f"Navigating to {building}..." 
 
+        # Reset FAQ panel state when navigation begins
         self.faq_manager.selected_question = None 
         self.faq_scroll_offset = 0
     
     def cancel_navigation(self):
+        """Cancel the current navigation and return to selection screen."""
         print("Navigation cancelled.")
         self.navigating_to = None
         self.status_message = "Navigation cancelled. Ready."
 
     def show_custom_message(self, text, font_size="large", bg_color=Colors.INFO):
+        """
+        Display a custom message in the navigation panel.
         
+        Args:
+            text (str): The message text to display
+            font_size (str): Size key for font ('small', 'regular', 'large', 'title')
+            bg_color (tuple): RGB color tuple for background
+            
+        Returns:
+            pygame.Rect: The rectangle area of the message panel
+        """
         self.is_showing_message = True  
         self.message_text = text
         self.message_font_size = font_size
@@ -678,29 +886,49 @@ class RobotInterface:
         self.navigating_to = None
         
     def show_warning_message(self, message):
+        """
+        Show a temporary warning message overlay.
+        
+        Args:
+            message (str): Warning text to display
+        """
         self.show_warning = True
         self.warning_message = message
         self.warning_time = time.time()
     
     def update(self):
+        """
+        Update interface state, such as checking warning timeouts and scroll limits.
+        Called once per frame before drawing.
+        """
+        # Check if warning should be dismissed
         if self.show_warning and time.time() - self.warning_time > self.warning_duration:
             self.show_warning = False
 
+        # Calculate FAQ panel display parameters
         total_questions = len(self.faq_manager.get_all_questions())
         title_y = Layout.CONTENT_Y + Layout.MARGIN
         content_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (title_y - Layout.CONTENT_Y) - Layout.MARGIN * 2
         available_height = content_height - 20
-        q_total_height = 50 + 10 
+        q_total_height = 50 + 10  # Question height + spacing
         self.faq_visible_count = max(1, available_height // q_total_height)
         
+        # Make sure scroll offset is within valid range
         max_offset = max(0, total_questions - self.faq_visible_count)
         self.faq_scroll_offset = max(0, min(self.faq_scroll_offset, max_offset))
 
     def draw(self):
+        """
+        Draw the entire interface to the screen.
+        Called once per frame after updating.
+        """
+        # Fill background
         screen.fill(Colors.BLACK)
         
+        # Draw header
         self.ui.draw_header(screen, "VRA Mobile Robot:")
         
+        # Draw either the message panel or navigation panel
         if self.is_showing_message:  
             self.ui.draw_message_panel(
                 screen, 
@@ -711,35 +939,110 @@ class RobotInterface:
         else:
             self.nav_buttons = self.ui.draw_navigation_panel(screen, self.navigating_to) 
         
+        # Draw the FAQ panel
         _, self.faq_buttons, self.faq_scroll_up_button, self.faq_scroll_down_button = self.ui.draw_info_panel(
             screen, self.faq_manager, self.faq_scroll_offset
         )
         
+        # Draw footer with status message
         self.ui.draw_footer(screen, self.status_message)
         
+        # Draw warning overlay if active
         if self.show_warning:
             self.ui.draw_warning(screen, self.warning_message)
 
+        # Update display
         pygame.display.flip()
     
     def clear_message(self):
+        """Reset message panel state and hide the custom message."""
         self.is_showing_message = False 
         self.message_text = "Custom Message"
         self.message_font_size = "large"
         self.message_bg_color = Colors.INFO
         self.status_message = "Ready for navigation" 
 
-    def run(self):            
-        while self.running:
-            self.handle_events()
-            self.update()
-            self.draw()
-            clock.tick(FPS)
-        
-        # Clean up
-        GPIO.cleanup()
-        pygame.quit()
-        sys.exit()
+# Create a global instance that can be imported by other modules
+robot_interface = None
+
+def initialize_interface():
+    """
+    Initialize the robot interface if it hasn't been initialized yet.
+    Should be called once at the beginning of the program.
+    
+    This function ensures there's only a single instance of RobotInterface
+    used throughout the application, implementing a singleton pattern.
+    
+    Returns:
+        RobotInterface: The global robot_interface instance
+    """
+    global robot_interface
+    if robot_interface is None:
+        robot_interface = RobotInterface()
+    return robot_interface
+
+def get_interface():
+    """
+    Get the global robot_interface instance.
+    Initialize it if it doesn't exist yet.
+    
+    This function provides access to the singleton RobotInterface
+    instance from any module that imports it.
+    
+    Returns:
+        RobotInterface: The global robot_interface instance
+    """
+    global robot_interface
+    if robot_interface is None:
+        return initialize_interface()
+    return robot_interface
+
+def display_message(text, font_size="large", bg_color=None):
+    """
+    Display a custom message in the navigation panel.
+    This function can be called from any module to show a message.
+    
+    This is the primary external API for showing messages in the GUI
+    from other modules like core.py or husky_gui_integration.py.
+    
+    Args:
+        text (str): The message text to display
+        font_size (str): Size of the font ('small', 'regular', 'large', or 'title')
+        bg_color (tuple): Background color of the message panel (uses Colors.INFO by default)
+    """
+    interface = get_interface()
+    
+    # Use appropriate color based on message type if not specified
+    if bg_color is None:
+        bg_color = Colors.INFO
+    
+    # Call the show_custom_message method on the interface instance
+    interface.show_custom_message(text, font_size, bg_color)
+    
+    # Force a redraw immediately to show the message
+    interface.draw()
+    pygame.display.flip()
+    
+def clear_message():
+    """
+    Clear the custom message from the navigation panel.
+    This function can be called from any module to hide the message.
+    
+    This complements the display_message function, allowing external
+    modules to remove a displayed message when no longer needed.
+    """
+    interface = get_interface()
+    interface.is_showing_message = False
+    interface.status_message = "Ready for navigation"
+    
+    # Force a redraw immediately
+    interface.draw()
+    pygame.display.flip()
+
+# Main entry point
+if __name__ == "__main__":
+    interface = initialize_interface()
+    interface.run()
 
 
 
