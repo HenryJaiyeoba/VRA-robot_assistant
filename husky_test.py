@@ -39,7 +39,7 @@ try:
                 print(f"Detected {len(results)} objects")
                 print("Detected objects: ", results)
                 print("Detected first object LEARNED?: ", results[0].learned)
-                print("Detected first object ID: ", results[0].ID)
+                print("Detected first object ID: ", results[0].ID) #ID = 1
             else:
                 print("No objects detected.")
             time.sleep(1)
