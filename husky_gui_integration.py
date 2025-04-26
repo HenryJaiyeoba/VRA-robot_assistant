@@ -3,7 +3,7 @@ import sys
 import RPi.GPIO as GPIO
 import os 
 import time
-from huskylib import HuskyLensLibrary
+from huskylibTest import HuskyLensLibrary
 from faq_manager import FAQManager
 from gui import RobotInterface, Colors
 
