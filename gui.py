@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 VRA (Visual Robot Assistant) Graphical User Interface
 

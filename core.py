@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 VRA Core Module - HuskyLens Integration with GUI Interface
 
