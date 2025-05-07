@@ -6,7 +6,7 @@ from huskylibTest import HuskyLensLibrary
 
 def check_i2c_connection():
     try:
-        bus = smbus.SMBus(0)  # Use 1 for newer Pi models, 0 for older ones
+        bus = smbus.SMBus(1)  # Use 1 for newer Pi models, 0 for older ones
         print("I2C bus initialized successfully")
         
         # Try to detect devices
