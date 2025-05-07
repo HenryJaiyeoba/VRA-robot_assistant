@@ -122,6 +122,7 @@ class HuskyGUIApp:
         """
         # Skip if HuskyLens isn't connected
         if not self.husky_connected or not self.hl:
+            print("HuskyLens not connected.")
             return
         
         # Throttle detection rate to avoid overwhelming the system
