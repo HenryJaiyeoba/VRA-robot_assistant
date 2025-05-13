@@ -23,6 +23,8 @@ import pygame
 import sys
 import os
 import time
+import webbrowser
+import subprocess
 from pygame.locals import *
 import RPi.GPIO as GPIO
 from faq_manager import FAQManager
@@ -281,7 +283,7 @@ class UI:
             title (str): Title text to display in the header
             
         Returns:
-            pygame.Rect: The rectangle area of the header
+            tuple: The rectangle area of the header and the LIVE button rect
         """
         # header background
         header_rect = self.draw_panel(
@@ -291,7 +293,7 @@ class UI:
             bg_color=Colors.PRIMARY
         )
         
-        #title text
+        # title text
         self.draw_text(
             surface, 
             title, 
@@ -302,7 +304,24 @@ class UI:
             align="center"
         )
         
-        return header_rect
+        # Add LIVE button to the right of the title
+        live_button_width = 100
+        live_button_height = 40
+        live_button_x = SCREEN_WIDTH - live_button_width - Layout.MARGIN
+        live_button_y = (Layout.HEADER_HEIGHT - live_button_height) // 2
+        
+        live_button = self.draw_button(
+            surface,
+            "LIVE",
+            live_button_x,
+            live_button_y,
+            width=live_button_width,
+            height=live_button_height,
+            color=Colors.SUCCESS,  # Green color for the button
+            font_size='regular'
+        )
+        
+        return header_rect, live_button
     
     def draw_footer(self, surface, status_text="Ready"):
         """
@@ -753,6 +772,7 @@ class RobotInterface:
         self.faq_buttons = []
         self.faq_scroll_up_button = None
         self.faq_scroll_down_button = None
+        self.live_button = None  # Store the LIVE button rect for click detection
         
         # Status message
         self.status_message = "Ready for navigation"
@@ -763,6 +783,10 @@ class RobotInterface:
         self.message_text = "Custom Message"
         self.message_font_size = "large"
         self.message_bg_color = Colors.INFO
+        
+        # LiveKit URL
+        self.livekit_url = "https://agents-playground.livekit.io/#cam=1&mic=1&video=1&audio=1&chat=1&theme_color=green"
+        self.voice_assistant_running = False
     
     def handle_events(self):
         """
@@ -795,6 +819,11 @@ class RobotInterface:
             
             elif event.type == MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
+                
+                # Check if LIVE button was clicked
+                if self.live_button and self.live_button.collidepoint(pos):
+                    self.activate_live_features()
+                    continue  # Skip other button checks
                 
                 # Handle navigation panel button clicks
                 if self.nav_buttons: 
@@ -925,8 +954,8 @@ class RobotInterface:
         # Fill background
         screen.fill(Colors.BLACK)
         
-        # Draw header
-        self.ui.draw_header(screen, "VRA Mobile Robot:")
+        # Draw header and get the LIVE button rect
+        _, self.live_button = self.ui.draw_header(screen, "VRA Mobile Robot:")
         
         # Draw either the message panel or navigation panel
         if self.is_showing_message:  
@@ -961,6 +990,78 @@ class RobotInterface:
         self.message_font_size = "large"
         self.message_bg_color = Colors.INFO
         self.status_message = "Ready for navigation" 
+
+    def activate_live_features(self):
+        """
+        Activate the LiveKit interface and voice assistant when the LIVE button is clicked.
+        
+        This method:
+        1. Opens the LiveKit website in the default browser
+        2. Starts the voice assistant in the background if it's not already running
+        """
+        # Update status message to indicate activation
+        self.status_message = "Activating LiveKit and Voice Assistant..."
+        
+        # Open the LiveKit website in the default browser
+        try:
+            webbrowser.open(self.livekit_url)
+            print(f"Opening LiveKit website: {self.livekit_url}")
+        except Exception as e:
+            print(f"Error opening LiveKit website: {str(e)}")
+            self.show_warning_message("Failed to open LiveKit")
+        
+        # Start the voice assistant if it's not already running
+        if not self.voice_assistant_running:
+            try:
+                # Replace with the actual command to start your voice assistant
+                # This is a placeholder command, update with your actual voice assistant command
+                subprocess.Popen(["python3", "-c", "print('Voice assistant started')"], 
+                                shell=False, 
+                                start_new_session=True)
+                
+                self.voice_assistant_running = True
+                print("Voice assistant started in the background")
+            except Exception as e:
+                print(f"Error starting voice assistant: {str(e)}")
+                self.show_warning_message("Failed to start voice assistant")
+        
+        # Update status to indicate success
+        self.status_message = "LiveKit and Voice Assistant active"
+
+    def run(self):
+        """
+        Main application loop that runs the user interface.
+        
+        This method:
+        1. Processes user input events
+        2. Updates the interface state
+        3. Redraws the interface
+        4. Maintains the frame rate
+        
+        The loop continues until the user exits the application.
+        """
+        try:
+            while self.running:
+                # Process user input (mouse, keyboard)
+                self.handle_events()
+                
+                # Update interface state
+                self.update()
+                
+                # Render the interface
+                self.draw()
+                
+                # Control frame rate
+                self.clock.tick(FPS)
+                
+        except KeyboardInterrupt:
+            print("\nProgram terminated by user.")
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+        finally:
+            # Clean up hardware resources
+            pygame.quit()
+            sys.exit(0)
 
 # Create a global instance that can be imported by other modules
 robot_interface = None
