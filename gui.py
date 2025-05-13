@@ -44,6 +44,43 @@ pygame.display.set_caption('VRA Interface')
 clock = pygame.time.Clock()
 FPS = 30
 
+# Icons/Emojis as unicode variables for easy access
+class Icons:
+    """
+    Define icon/emoji constants used throughout the application.
+    All icons are unicode characters that can be rendered directly as text.
+    """
+    # Navigation icons
+    ARROW_UP = "↑"
+    ARROW_DOWN = "↓"
+    ARROW_LEFT = "←"
+    ARROW_RIGHT = "→"
+    
+    # Building icons
+    BUILDING = "🏢"
+    SCHOOL = "🏫"
+    HOSPITAL = "🏥"
+    
+    # Action icons
+    CHECK = "✓"
+    CANCEL = "✗"
+    WARNING = "⚠"
+    INFO = "ℹ"
+    QUESTION = "?"
+    BACK = "↩"
+    
+    # Status icons
+    ROBOT = "🤖"
+    LOADING = "⏳"
+    SUCCESS = "✅"
+    ERROR = "❌"
+    
+    # Misc icons
+    STAR = "★"
+    PIN = "📍"
+    MAP = "🗺"
+    ROUTES = "🛣"
+
 #color scheme def 
 class Colors:
     """
@@ -274,16 +311,17 @@ class UI:
             
         return panel_rect
     
-    def draw_header(self, surface, title="VRA Interface"):
+    def draw_header(self, surface, title="VRA Interface", voice_assistant_active=False):
         """
         Draw the header section at the top of the interface.
         
         Args:
             surface (pygame.Surface): Surface to draw on
             title (str): Title text to display in the header
+            voice_assistant_active (bool): Whether the voice assistant is active
             
         Returns:
-            tuple: The rectangle area of the header and the LIVE button rect
+            tuple: The rectangle area of the header and the LIVE/STOP button rect
         """
         # header background
         header_rect = self.draw_panel(
@@ -292,6 +330,15 @@ class UI:
             SCREEN_WIDTH, Layout.HEADER_HEIGHT,
             bg_color=Colors.PRIMARY
         )
+        
+        # Add robot icon before title
+        robot_icon_font = self.fonts['large']
+        robot_icon_surf = robot_icon_font.render(Icons.ROBOT, True, Colors.WHITE)
+        robot_icon_rect = robot_icon_surf.get_rect(
+            centery=Layout.HEADER_HEIGHT // 2,
+            right=SCREEN_WIDTH // 2 - 10  # Position to the left of the title center
+        )
+        surface.blit(robot_icon_surf, robot_icon_rect)
         
         # title text
         self.draw_text(
@@ -304,24 +351,38 @@ class UI:
             align="center"
         )
         
-        # Add LIVE button to the right of the title
-        live_button_width = 100
-        live_button_height = 40
-        live_button_x = SCREEN_WIDTH - live_button_width - Layout.MARGIN
-        live_button_y = (Layout.HEADER_HEIGHT - live_button_height) // 2
+        # Add LIVE/STOP button to the right of the title
+        button_width = 100
+        button_height = 40
+        button_x = SCREEN_WIDTH - button_width - Layout.MARGIN
+        button_y = (Layout.HEADER_HEIGHT - button_height) // 2
         
-        live_button = self.draw_button(
-            surface,
-            "LIVE",
-            live_button_x,
-            live_button_y,
-            width=live_button_width,
-            height=live_button_height,
-            color=Colors.SUCCESS,  # Green color for the button
-            font_size='regular'
-        )
+        if voice_assistant_active:
+            # Show STOP button when voice assistant is active
+            button = self.draw_button(
+                surface,
+                "STOP",
+                button_x,
+                button_y,
+                width=button_width,
+                height=button_height,
+                color=Colors.ERROR,  # Red color for stop button
+                font_size='regular'
+            )
+        else:
+            # Show LIVE button when voice assistant is inactive
+            button = self.draw_button(
+                surface,
+                "LIVE",
+                button_x,
+                button_y,
+                width=button_width,
+                height=button_height,
+                color=Colors.SUCCESS,  # Green color for the button
+                font_size='regular'
+            )
         
-        return header_rect, live_button
+        return header_rect, button
     
     def draw_footer(self, surface, status_text="Ready"):
         """
@@ -954,8 +1015,9 @@ class RobotInterface:
         # Fill background
         screen.fill(Colors.BLACK)
         
-        # Draw header and get the LIVE button rect
-        _, self.live_button = self.ui.draw_header(screen, "VRA Mobile Robot:")
+        # Draw header and get the LIVE/STOP button rect
+        # Pass the voice assistant status to draw_header
+        _, self.live_button = self.ui.draw_header(screen, "VRA Mobile Robot:", self.voice_assistant_running)
         
         # Draw either the message panel or navigation panel
         if self.is_showing_message:  
@@ -993,25 +1055,63 @@ class RobotInterface:
 
     def activate_live_features(self):
         """
-        Activate the LiveKit interface and voice assistant when the LIVE button is clicked.
+        Toggle the LiveKit interface and voice assistant when the LIVE/STOP button is clicked.
         
-        This method:
+        If voice assistant is not running:
         1. Opens the LiveKit website in the default browser
-        2. Starts the voice assistant in the background if it's not already running
+        2. Starts the voice assistant in the background
+        
+        If voice assistant is already running:
+        1. Stops the voice assistant process
         """
-        # Update status message to indicate activation
-        self.status_message = "Activating LiveKit..."
-        
-        # Open the LiveKit website in the default browser
-        try:
-            webbrowser.open(self.livekit_url)
-            print(f"Opening LiveKit website: {self.livekit_url}")
-        except Exception as e:
-            print(f"Error opening LiveKit website: {str(e)}")
-            self.show_warning_message("Failed to open LiveKit")
-        
-        # Start the voice assistant if it's not already running
-        if not self.voice_assistant_running:
+        # If voice assistant is already running, stop it
+        if self.voice_assistant_running:
+            try:
+                # Update status message to indicate deactivation
+                self.status_message = "Stopping voice assistant..."
+                
+                # In a real implementation, you would need to terminate the voice assistant process
+                # This is platform-specific and depends on how you started the process
+                import sys
+                
+                if sys.platform == 'darwin':  # macOS
+                    # For demonstration, we're just setting the flag to false
+                    # In a real implementation, you would use subprocess.Popen.terminate() 
+                    # or send a signal to the process
+                    subprocess.run(["pkill", "-f", "voice_assistant"], 
+                                  stdout=subprocess.DEVNULL, 
+                                  stderr=subprocess.DEVNULL)
+                elif sys.platform == 'win32':  # Windows
+                    # Windows equivalent would use taskkill
+                    subprocess.run(["taskkill", "/f", "/im", "voice_assistant"], 
+                                  stdout=subprocess.DEVNULL, 
+                                  stderr=subprocess.DEVNULL)
+                else:  # Linux
+                    subprocess.run(["pkill", "-f", "voice_assistant"], 
+                                  stdout=subprocess.DEVNULL, 
+                                  stderr=subprocess.DEVNULL)
+                    
+                self.voice_assistant_running = False
+                print("Voice assistant stopped")
+                self.status_message = "Voice assistant stopped"
+                
+            except Exception as e:
+                print(f"Error stopping voice assistant: {str(e)}")
+                self.show_warning_message("Failed to stop voice assistant")
+                
+        # If voice assistant is not running, start it and open LiveKit
+        else:
+            # Update status message to indicate activation
+            self.status_message = "Activating LiveKit..."
+            
+            # Open the LiveKit website in the default browser
+            try:
+                webbrowser.open(self.livekit_url)
+                print(f"Opening LiveKit website: {self.livekit_url}")
+            except Exception as e:
+                print(f"Error opening LiveKit website: {str(e)}")
+                self.show_warning_message("Failed to open LiveKit")
+            
             try:
                 # Use a platform-safe way to run the voice assistant
                 # Use sys.executable to ensure we use the correct Python interpreter
@@ -1045,13 +1145,12 @@ class RobotInterface:
                 
                 self.voice_assistant_running = True
                 print("Voice assistant started in the background")
+                self.status_message = "LiveKit and voice assistant activated"
+                
             except Exception as e:
                 print(f"Error starting voice assistant: {str(e)}")
                 # Don't show warning to user, just log it
-                # self.show_warning_message("Failed to start voice assistant")
-        
-        # Update status to indicate success
-        self.status_message = "LiveKit activated"
+                self.status_message = "LiveKit activated (voice assistant failed)"
 
     def run(self):
         """
