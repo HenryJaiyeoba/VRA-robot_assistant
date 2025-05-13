@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 VRA (Visual Robot Assistant) Graphical User Interface
 
@@ -42,41 +41,6 @@ pygame.display.set_caption('VRA Interface')
 
 clock = pygame.time.Clock()
 FPS = 30
-
-# Icons/Emojis as unicode variables for easy access
-class Icons:
-    """
-    Define icon/emoji constants used throughout the application.
-    All icons are unicode characters that can be rendered directly as text.
-    """
-    # Navigation icons
-    ARROW_UP = "↑"
-    ARROW_DOWN = "↓"
-    ARROW_LEFT = "←"
-    ARROW_RIGHT = "→"
-    
-    # Building icons
-    BUILDING = "🏢"
-    SCHOOL = "🏫"
-    HOSPITAL = "🏥"
-    
-    # Action icons
-    CHECK = "✓"
-    CANCEL = "✗"
-    WARNING = "⚠️"
-    INFO = "ℹ️"
-    QUESTION = "❓"
-    BACK = "↩️"
-    
-    # Status icons
-    ROBOT = "🤖"
-    LOADING = "⏳"
-    SUCCESS = "✅"
-    ERROR = "❌"
-    
-    # Misc icons
-    MAP = "🗺️"
-    PIN = "📍"
 
 #color scheme def 
 class Colors:
@@ -143,31 +107,16 @@ class Layout:
 def load_fonts():
     """
     Initialize and return a dictionary of pygame font objects at different sizes.
-    Tries to use fonts with good emoji support first.
     
     Returns:
         dict: Dictionary of font objects with keys 'small', 'regular', 'large', and 'title'
     """
-    # Prioritize fonts known for good emoji support
-    emoji_font_names = "NotoColorEmoji, AppleColorEmoji, SegoeUIEmoji, DejaVuSans"
-    
-    fonts = {}
-    sizes = {
-        'small': 24,
-        'regular': 32,
-        'large': 48,
-        'title': 64
+    fonts = {
+        'small': pygame.font.Font(None, 24),
+        'regular': pygame.font.Font(None, 32),
+        'large': pygame.font.Font(None, 48),
+        'title': pygame.font.Font(None, 64)
     }
-    
-    for name, size in sizes.items():
-        try:
-            # Try to load a font with emoji support
-            font = pygame.font.SysFont(emoji_font_names, size)
-        except pygame.error:
-            # Fallback to default system font if emoji fonts are not found
-            font = pygame.font.Font(None, size)
-        fonts[name] = font
-        
     return fonts
 
 class UI:
@@ -342,15 +291,6 @@ class UI:
             bg_color=Colors.PRIMARY
         )
         
-        # Add robot icon before title
-        robot_icon_font = self.fonts['large']
-        robot_icon_surf = robot_icon_font.render(Icons.ROBOT, True, Colors.WHITE)
-        robot_icon_rect = robot_icon_surf.get_rect(
-            centery=Layout.HEADER_HEIGHT // 2,
-            right=SCREEN_WIDTH // 2 - 10  # Position to the left of the title center
-        )
-        surface.blit(robot_icon_surf, robot_icon_rect)
-        
         #title text
         self.draw_text(
             surface, 
@@ -383,36 +323,13 @@ class UI:
             bg_color=Colors.LIGHT_GRAY
         )
         
-        # Add appropriate status icon based on status message
-        status_icon = Icons.INFO  # Default icon
-        
-        if "Ready" in status_text:
-            status_icon = Icons.CHECK
-        elif "Navigating" in status_text:
-            status_icon = Icons.PIN
-        elif "Viewing FAQ" in status_text:
-            status_icon = Icons.QUESTION
-        elif "cancelled" in status_text:
-            status_icon = Icons.CANCEL
-        elif "Obstacle" in status_text or "detected" in status_text:
-            status_icon = Icons.WARNING
-            
-        # Draw icon
-        icon_font = self.fonts['regular']
-        icon_surf = icon_font.render(status_icon, True, Colors.BLACK)
-        icon_rect = icon_surf.get_rect(
-            centery=Layout.FOOTER_Y + Layout.FOOTER_HEIGHT // 2,
-            left=Layout.MARGIN
-        )
-        surface.blit(icon_surf, icon_rect)
-        
-        #status text with offset for icon
+        #status text
         self.draw_text(
             surface,
             status_text,
             'regular',
             Colors.BLACK,
-            Layout.MARGIN + 30,  # Add space for icon
+            Layout.MARGIN,
             Layout.FOOTER_Y + Layout.PADDING,
             align="left"
         )
@@ -442,15 +359,6 @@ class UI:
         buttons = {'panel': nav_panel} # Initialize buttons dict
 
         if navigating_to:
-            # Display map pin and loading icon
-            loading_icon_font = self.fonts['regular']
-            loading_icon_surf = loading_icon_font.render(Icons.LOADING, True, Colors.PRIMARY_DARK)
-            loading_icon_rect = loading_icon_surf.get_rect(
-                centery=Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 3 - 30,
-                centerx=Layout.NAV_WIDTH // 2
-            )
-            surface.blit(loading_icon_surf, loading_icon_rect)
-            
             # Display navigation status message
             message = f"Navigating to {navigating_to}..."
             text_rect = self.draw_text(
@@ -464,7 +372,7 @@ class UI:
                 max_width=Layout.NAV_WIDTH - Layout.MARGIN * 2 # Allow wrapping
             )
 
-            # Add Cancel Button below the message with cancel icon
+            # Add Cancel Button below the message
             cancel_button_width = 150
             cancel_button_height = 50
             cancel_button_x = (Layout.NAV_WIDTH - cancel_button_width) // 2
@@ -473,7 +381,7 @@ class UI:
 
             cancel_button = self.draw_button(
                 surface,
-                f"{Icons.CANCEL} Cancel",
+                "Cancel",
                 cancel_button_x,
                 cancel_button_y,
                 width=cancel_button_width,
@@ -483,11 +391,11 @@ class UI:
             )
             buttons['cancel_button'] = cancel_button 
         else:
-            # Display building selection options with map icon
+            # Display building selection options
             title_y = Layout.CONTENT_Y + Layout.MARGIN
             self.draw_text(
                 surface,
-                f"{Icons.MAP} Where would you like to go?",
+                "Where would you like to go?",
                 'regular',
                 Colors.BLACK,
                 Layout.NAV_WIDTH // 2,
@@ -500,11 +408,11 @@ class UI:
             button_height = 60
             button_spacing = 20
             
-            # ST Building Button (UP) with arrow and building icon
+            # ST Building Button (UP)
             st_y = title_y + 50
             st_button = self.draw_button(
                 surface,
-                f"{Icons.ARROW_UP} {Icons.BUILDING} ST Building",
+                "Press UP for ST Building",
                 Layout.MARGIN,
                 st_y,
                 width=button_width,
@@ -513,11 +421,11 @@ class UI:
                 font_size="small"
             )
             
-            # CU Building Button (RIGHT) with arrow and school icon
+            # CU Building Button (RIGHT)
             cu_y = st_y + button_height + button_spacing
             cu_button = self.draw_button(
                 surface,
-                f"{Icons.ARROW_RIGHT} {Icons.SCHOOL} CU Building",
+                "Press RIGHT for CU Building",
                 Layout.MARGIN,
                 cu_y,
                 width=button_width,
@@ -526,11 +434,11 @@ class UI:
                 font_size="small"
             )
             
-            # GE Building Button (LEFT) with arrow and hospital icon
+            # GE Building Button (LEFT)
             ge_y = cu_y + button_height + button_spacing
             ge_button = self.draw_button(
                 surface,
-                f"{Icons.ARROW_LEFT} {Icons.HOSPITAL} GE Building",
+                "Press LEFT for GE Building",
                 Layout.MARGIN,
                 ge_y,
                 width=button_width,
@@ -569,10 +477,9 @@ class UI:
         )
         
         title_y = Layout.CONTENT_Y + Layout.MARGIN
-        # Add question icon to FAQ title
         self.draw_text(
             surface,
-            f"{Icons.QUESTION} Frequently Asked Questions",
+            "Frequently Asked Questions",
             'regular',
             Colors.BLACK,
             Layout.INFO_X + (Layout.INFO_WIDTH // 2),
@@ -589,7 +496,7 @@ class UI:
         scroll_down_button = None
 
         if faq_manager.selected_question:
-            # Draw question with question icon
+            # Draw question
             question_rect = self.draw_panel(
                 surface,
                 Layout.INFO_X + Layout.MARGIN,
@@ -600,30 +507,20 @@ class UI:
                 border_radius=5
             )
             
-            # Draw question icon
-            q_icon_font = self.fonts['regular']
-            q_icon_surf = q_icon_font.render(Icons.QUESTION, True, Colors.WHITE)
-            q_icon_rect = q_icon_surf.get_rect(
-                centery=content_y + 30,
-                left=Layout.INFO_X + Layout.MARGIN + 10
-            )
-            surface.blit(q_icon_surf, q_icon_rect)
-            
-            # Draw question text with offset for icon
             self.draw_text(
                 surface,
                 faq_manager.selected_question['data']['question'],
                 'regular',
                 Colors.WHITE,
-                Layout.INFO_X + Layout.MARGIN + 40, # Add space for icon
+                Layout.INFO_X + Layout.MARGIN + 10,
                 content_y + 15, # Adjusted y for text inside panel
-                max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 50 # Account for icon space
+                max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
             )
             
-            # Draw back button with back arrow icon
+            # Draw back button
             back_button = self.draw_button(
                 surface,
-                f"{Icons.BACK} Back to FAQs",
+                "Back to FAQs",
                 Layout.INFO_X + Layout.MARGIN,
                 content_y + 70, # Position below question panel
                 width=150,
@@ -632,7 +529,7 @@ class UI:
             )
             question_buttons.append(('back', back_button))
             
-            # Draw answer with info icon
+            # Draw answer
             answer_y = content_y + 130 # Position below back button
             answer_panel_height = Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT - (answer_y - Layout.CONTENT_Y) - Layout.MARGIN
             answer_panel = self.draw_panel(
@@ -645,24 +542,14 @@ class UI:
                 border_radius=5
             )
             
-            # Info icon for answer
-            info_icon_font = self.fonts['regular']
-            info_icon_surf = info_icon_font.render(Icons.INFO, True, Colors.BLACK)
-            info_icon_rect = info_icon_surf.get_rect(
-                top=answer_y + 10,
-                left=Layout.INFO_X + Layout.MARGIN + 10
-            )
-            surface.blit(info_icon_surf, info_icon_rect)
-            
-            # Draw answer text with offset for icon
             self.draw_text(
                 surface,
                 faq_manager.selected_question['data']['answer'],
                 'regular',
                 Colors.BLACK,
-                Layout.INFO_X + Layout.MARGIN + 40, # Add space for icon
+                Layout.INFO_X + Layout.MARGIN + 10,
                 answer_y + 10,
-                max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 50 # Account for icon space
+                max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 2) - 20
             )
             
         else:
@@ -696,25 +583,15 @@ class UI:
                     bg_color=Colors.PRIMARY_LIGHT,
                     border_radius=5
                 )
-                
-                # Add question mark icon for each FAQ item
-                q_icon_font = self.fonts['small']
-                q_icon_surf = q_icon_font.render(Icons.QUESTION, True, Colors.WHITE)
-                q_icon_rect = q_icon_surf.get_rect(
-                    centery=q_y + (q_height // 2),
-                    left=Layout.INFO_X + Layout.MARGIN + 10
-                )
-                surface.blit(q_icon_surf, q_icon_rect)
-                
-                # question text with offset for icon
+                # question text
                 self.draw_text(
                     surface,
                     q['data']['question'],
                     'small',
                     Colors.WHITE,
-                    Layout.INFO_X + Layout.MARGIN + 35, # Add space for icon
+                    Layout.INFO_X + Layout.MARGIN + 10,
                     q_y + (q_height // 2) - 8, # Center text vertically approx
-                    max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 3) - scroll_button_width - 40 # Adjust max width for icon
+                    max_width=Layout.INFO_WIDTH - (Layout.MARGIN * 3) - scroll_button_width - 10 # Adjust max width
                 )
                 
                 question_buttons.append((q, q_button))
@@ -728,19 +605,24 @@ class UI:
                 scroll_up_rect = pygame.Rect(scroll_button_x, scroll_up_y, scroll_button_width, q_height)
                 scroll_down_rect = pygame.Rect(scroll_button_x, scroll_down_y, scroll_button_width, q_height)
 
-                # Use arrow icons instead of polygons
+                # Up Arrow Button
                 up_color = Colors.SECONDARY if scroll_offset > 0 else Colors.GRAY
-                up_icon_font = self.fonts['regular']
-                up_icon_surf = up_icon_font.render(Icons.ARROW_UP, True, up_color)
-                up_icon_rect = up_icon_surf.get_rect(center=scroll_up_rect.center)
-                surface.blit(up_icon_surf, up_icon_rect)
+                up_arrow_points = [
+                    (scroll_up_rect.centerx, scroll_up_rect.top + scroll_up_rect.height * 0.2),  # Top point
+                    (scroll_up_rect.left + scroll_up_rect.width * 0.2, scroll_up_rect.top + scroll_up_rect.height * 0.7), # Bottom-left
+                    (scroll_up_rect.right - scroll_up_rect.width * 0.2, scroll_up_rect.top + scroll_up_rect.height * 0.7) # Bottom-right
+                ]
+                pygame.draw.polygon(surface, up_color, up_arrow_points)
                 scroll_up_button = scroll_up_rect # Use the rect for click detection
                 
+                # Down Arrow Button
                 down_color = Colors.SECONDARY if end_index < len(all_questions) else Colors.GRAY
-                down_icon_font = self.fonts['regular'] 
-                down_icon_surf = down_icon_font.render(Icons.ARROW_DOWN, True, down_color)
-                down_icon_rect = down_icon_surf.get_rect(center=scroll_down_rect.center)
-                surface.blit(down_icon_surf, down_icon_rect)
+                down_arrow_points = [
+                    (scroll_down_rect.centerx, scroll_down_rect.top + scroll_down_rect.height * 0.8), # Bottom point
+                    (scroll_down_rect.left + scroll_down_rect.width * 0.2, scroll_down_rect.top + scroll_down_rect.height * 0.3), # Top-left
+                    (scroll_down_rect.right - scroll_down_rect.width * 0.2, scroll_down_rect.top + scroll_down_rect.height * 0.3) # Top-right
+                ]
+                pygame.draw.polygon(surface, down_color, down_arrow_points)
                 scroll_down_button = scroll_down_rect # Use the rect for click detection
 
         return info_panel, question_buttons, scroll_up_button, scroll_down_button
@@ -767,32 +649,14 @@ class UI:
             border_width=1
         )
         
-        # Choose appropriate icon based on message background color
-        icon = Icons.INFO  # Default icon
-        if bg_color == Colors.ERROR:
-            icon = Icons.ERROR
-        elif bg_color == Colors.WARNING:
-            icon = Icons.WARNING
-        elif bg_color == Colors.SUCCESS:
-            icon = Icons.SUCCESS
-            
-        # Draw icon above the text
-        icon_font = self.fonts[font_size]
-        icon_surf = icon_font.render(icon, True, Colors.WHITE)
-        icon_rect = icon_surf.get_rect(
-            centerx=Layout.NAV_WIDTH // 2,
-            bottom=Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 2 - 20
-        )
-        surface.blit(icon_surf, icon_rect)
-        
-        # Center the text in the panel below the icon
+        # Center the text in the panel
         text_rect = self.draw_text(
             surface,
             text,
             font_size,
             Colors.WHITE,  # Use white text for good contrast on colored backgrounds
             Layout.NAV_WIDTH // 2,
-            Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 2 + 20,
+            Layout.CONTENT_Y + (Layout.CONTENT_HEIGHT - Layout.FOOTER_HEIGHT) // 2,
             align="center",
             max_width=Layout.NAV_WIDTH - (Layout.MARGIN * 2)  # Allow wrapping
         )
@@ -828,26 +692,30 @@ class UI:
             border_radius=10
         )
         
-        # Use warning icon instead of circle with exclamation
-        icon_font = self.fonts['title']  # Larger font for warning icon
-        warning_icon_surf = icon_font.render(Icons.WARNING, True, Colors.WHITE)
-        warning_icon_rect = warning_icon_surf.get_rect(
-            centery=warning_y + (warning_height // 2),
-            left=warning_x + 30
-        )
-        surface.blit(warning_icon_surf, warning_icon_rect)
+        icon_radius = 25
+        icon_x = warning_x + 50
+        icon_y = warning_y + (warning_height // 2)
+        pygame.draw.circle(surface, Colors.WHITE, (icon_x, icon_y), icon_radius)
+        pygame.draw.circle(surface, Colors.ERROR, (icon_x, icon_y), icon_radius - 5)
         
-        # Warning text
+        #exclamation mark
+        font = self.fonts['large']
+        text_surf = font.render("!", True, Colors.WHITE)
+        text_rect = text_surf.get_rect(center=(icon_x, icon_y))
+        surface.blit(text_surf, text_rect)
+        
+        #warning text
         self.draw_text(
             surface,
             message,
             'large',
             Colors.WHITE,
-            warning_x + 100, # Position after icon
+            warning_x + icon_radius * 2 + 60, # Increased space after icon
             warning_y + (warning_height // 2),
             align="left",
-            max_width=warning_width - 120 # Adjust max width for icon space
+            max_width=warning_width - (icon_radius * 2 + 70) # Max width considering icon and padding
         )
+        
         
         return warning_panel
 
