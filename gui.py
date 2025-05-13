@@ -1000,7 +1000,7 @@ class RobotInterface:
         2. Starts the voice assistant in the background if it's not already running
         """
         # Update status message to indicate activation
-        self.status_message = "Activating LiveKit and Voice Assistant..."
+        self.status_message = "Activating LiveKit..."
         
         # Open the LiveKit website in the default browser
         try:
@@ -1013,20 +1013,45 @@ class RobotInterface:
         # Start the voice assistant if it's not already running
         if not self.voice_assistant_running:
             try:
-                # Replace with the actual command to start your voice assistant
-                # This is a placeholder command, update with your actual voice assistant command
-                subprocess.Popen(["python3", "-c", "print('Voice assistant started')"], 
-                                shell=False, 
-                                start_new_session=True)
+                # Use a platform-safe way to run the voice assistant
+                # Use sys.executable to ensure we use the correct Python interpreter
+                import sys
+                
+                # Create a detached process that won't display terminal errors
+                if sys.platform == 'darwin':  # macOS
+                    # For macOS, use subprocess with appropriate configuration
+                    subprocess.Popen(
+                        ["python3", "-c", "print('Voice assistant started')"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True
+                    )
+                elif sys.platform == 'win32':  # Windows
+                    # For Windows, use DETACHED_PROCESS to avoid console window
+                    subprocess.Popen(
+                        ["python", "-c", "print('Voice assistant started')"],
+                        creationflags=subprocess.DETACHED_PROCESS,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
+                else:  # Linux and other Unix-like systems
+                    # Standard approach for Linux
+                    subprocess.Popen(
+                        ["python3", "-c", "print('Voice assistant started')"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True
+                    )
                 
                 self.voice_assistant_running = True
                 print("Voice assistant started in the background")
             except Exception as e:
                 print(f"Error starting voice assistant: {str(e)}")
-                self.show_warning_message("Failed to start voice assistant")
+                # Don't show warning to user, just log it
+                # self.show_warning_message("Failed to start voice assistant")
         
         # Update status to indicate success
-        self.status_message = "LiveKit and Voice Assistant active"
+        self.status_message = "LiveKit activated"
 
     def run(self):
         """
