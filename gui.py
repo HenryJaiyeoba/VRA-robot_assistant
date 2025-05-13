@@ -331,14 +331,14 @@ class UI:
             bg_color=Colors.PRIMARY
         )
         
-        # Add robot icon before title
-        robot_icon_font = self.fonts['large']
-        robot_icon_surf = robot_icon_font.render(Icons.ROBOT, True, Colors.WHITE)
-        robot_icon_rect = robot_icon_surf.get_rect(
-            centery=Layout.HEADER_HEIGHT // 2,
-            right=SCREEN_WIDTH // 2 - 10  # Position to the left of the title center
-        )
-        surface.blit(robot_icon_surf, robot_icon_rect)
+        # # Add robot icon before title
+        # robot_icon_font = self.fonts['large']
+        # robot_icon_surf = robot_icon_font.render(Icons.ROBOT, True, Colors.WHITE)
+        # robot_icon_rect = robot_icon_surf.get_rect(
+        #     centery=Layout.HEADER_HEIGHT // 2,
+        #     right=SCREEN_WIDTH // 2 - 10  # Position to the left of the title center
+        # )
+        # surface.blit(robot_icon_surf, robot_icon_rect)
         
         # title text
         self.draw_text(
@@ -366,7 +366,7 @@ class UI:
                 button_y,
                 width=button_width,
                 height=button_height,
-                color=Colors.ERROR,  # Red color for stop button
+                color=Colors.ERROR,  
                 font_size='regular'
             )
         else:
@@ -378,7 +378,7 @@ class UI:
                 button_y,
                 width=button_width,
                 height=button_height,
-                color=Colors.SUCCESS,  # Green color for the button
+                color=Colors.SUCCESS, 
                 font_size='regular'
             )
         
