@@ -143,16 +143,31 @@ class Layout:
 def load_fonts():
     """
     Initialize and return a dictionary of pygame font objects at different sizes.
+    Tries to use fonts with good emoji support first.
     
     Returns:
         dict: Dictionary of font objects with keys 'small', 'regular', 'large', and 'title'
     """
-    fonts = {
-        'small': pygame.font.Font(None, 24),
-        'regular': pygame.font.Font(None, 32),
-        'large': pygame.font.Font(None, 48),
-        'title': pygame.font.Font(None, 64)
+    # Prioritize fonts known for good emoji support
+    emoji_font_names = "NotoColorEmoji, AppleColorEmoji, SegoeUIEmoji, DejaVuSans"
+    
+    fonts = {}
+    sizes = {
+        'small': 24,
+        'regular': 32,
+        'large': 48,
+        'title': 64
     }
+    
+    for name, size in sizes.items():
+        try:
+            # Try to load a font with emoji support
+            font = pygame.font.SysFont(emoji_font_names, size)
+        except pygame.error:
+            # Fallback to default system font if emoji fonts are not found
+            font = pygame.font.Font(None, size)
+        fonts[name] = font
+        
     return fonts
 
 class UI:
