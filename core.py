@@ -26,7 +26,7 @@ import os
 import time
 from huskylibTest import HuskyLensLibrary
 from faq_manager import FAQManager
-from gui import RobotInterface, Colors
+from gui import get_interface, Colors
 
 # Constants for application configuration
 FPS = 30                # Frame rate for GUI updates
@@ -46,7 +46,7 @@ class HuskyGUIApp:
     def __init__(self):
         """Initialize the application with GUI and HuskyLens components."""
         # Create the main interface controller
-        self.app = RobotInterface()
+        self.app = get_interface()
         
         # HuskyLens connection status and instance
         self.husky_connected = False
