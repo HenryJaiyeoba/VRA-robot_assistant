@@ -29,7 +29,7 @@ from pygame.locals import *
 import RPi.GPIO as GPIO
 from faq_manager import FAQManager
 
-
+__all__ = ['RobotInterface', 'Colors', 'get_interface', 'initialize_interface', 'display_message', 'clear_message']
 pygame.init()
 
 # Screen dimensions (set for Raspberry Pi touchscreen)
