@@ -10,9 +10,9 @@ def test_arduino_connection():
     try:
         with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as conn:
             time.sleep(2)
-            conn.write(b"f\n")
+            conn.write(b"f")
             time.sleep(5)
-            conn.write(b"s\n")
+            conn.write(b"s")
             time.sleep(5)
             print("Sent message to Arduino")
     except serial.SerialException as e:
