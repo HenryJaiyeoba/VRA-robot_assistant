@@ -18,7 +18,7 @@ class ArduinoHandler:
             self.connection = None
 
     def send_command(self, command):
-        if self.connection and self.connection.is_open:
+        if self.connection:
             self.connection.write(command.encode())
             print(f"Sent command: {command}")
         else:
