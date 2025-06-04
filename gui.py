@@ -29,6 +29,7 @@ import pygame
 import RPi.GPIO as GPIO
 from pygame.locals import *
 
+from arduino_handler import ArduinoHandler
 from faq_manager import FAQManager
 
 __all__ = [
@@ -964,6 +965,14 @@ class RobotInterface:
         - Mouse clicks on buttons, panels, and FAQ items
         - Navigation selections and cancellations
         """
+        # initialize the arduino connection
+        arduino_handler = ArduinoHandler()
+        try:
+            arduino_handler.connect()
+        except Exception as e:
+            print(f"Error connecting to Arduino: {e}")
+            sys.exit(1)
+
         for event in pygame.event.get():
             if event.type == QUIT:
                 self.running = False
@@ -1002,23 +1011,34 @@ class RobotInterface:
                         ].collidepoint(pos):
                             print("this button was clicked")
                             self.cancel_navigation()
+                            arduino_handler.send_command("s")
+                            time.sleep(0.5)
+                            arduino_handler.close()
 
                     else:
                         if self.nav_buttons.get("st_button") and self.nav_buttons[
                             "st_button"
                         ].collidepoint(pos):
                             self.display_building_selection("ST Building")
-                            # Send data to Arduino code here or go into the display_building_selection function
+                            arduino_handler.send_command("f")
+                            time.sleep(0.5)
+                            arduino_handler.close()
+
                         elif self.nav_buttons.get("cu_button") and self.nav_buttons[
                             "cu_button"
                         ].collidepoint(pos):
                             self.display_building_selection("CU Building")
-                            # Send data to Arduino code here or go into the display_building_selection function
+                            arduino_handler.send_command("r")
+                            time.sleep(0.5)
+                            arduino_handler.close()
+
                         elif self.nav_buttons.get("ge_button") and self.nav_buttons[
                             "ge_button"
                         ].collidepoint(pos):
                             self.display_building_selection("GE Building")
-                            # Send data to Arduino code here or go into the display_building_selection function
+                            arduino_handler.send_command("l")
+                            time.sleep(0.5)
+                            arduino_handler.close()
 
                 # Check FAQ buttons (these are always in the right panel)
                 if not self.faq_manager.selected_question:
