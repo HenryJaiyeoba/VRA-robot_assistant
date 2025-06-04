@@ -1035,7 +1035,7 @@ class RobotInterface:
                             self.display_building_selection("GE Building")
                             arduino_handler.send_command("l")
                             # time.sleep(3)
-                    arduino_handler.close()
+                    # arduino_handler.close()
 
                 # Check FAQ buttons (these are always in the right panel)
                 if not self.faq_manager.selected_question:
