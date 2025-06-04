@@ -1013,7 +1013,6 @@ class RobotInterface:
                             self.cancel_navigation()
                             arduino_handler.send_command("s")
                             # time.sleep(3)
-                            arduino_handler.close()
 
                     else:
                         if self.nav_buttons.get("st_button") and self.nav_buttons[
@@ -1023,15 +1022,12 @@ class RobotInterface:
                             arduino_handler.send_command("f")
                             # time.sleep(3)
 
-                            arduino_handler.close()
-
                         elif self.nav_buttons.get("cu_button") and self.nav_buttons[
                             "cu_button"
                         ].collidepoint(pos):
                             self.display_building_selection("CU Building")
                             arduino_handler.send_command("r")
                             # time.sleep(3)
-                            arduino_handler.close()
 
                         elif self.nav_buttons.get("ge_button") and self.nav_buttons[
                             "ge_button"
@@ -1039,7 +1035,7 @@ class RobotInterface:
                             self.display_building_selection("GE Building")
                             arduino_handler.send_command("l")
                             # time.sleep(3)
-                            arduino_handler.close()
+                    arduino_handler.close()
 
                 # Check FAQ buttons (these are always in the right panel)
                 if not self.faq_manager.selected_question:
